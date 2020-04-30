@@ -1,0 +1,16 @@
+apiVersion : apps/v1beta1
+kind: Deployment
+metadata:
+  name: bpdmsnotificationmanager 
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: bpdmsnotificationmanager 
+    spec:
+      containers:
+        - name: bpdmsnotificationmanager 
+          image: cstarregistry.azurecr.io/bpdmsnotificationmanager
+          ports:
+          - containerPort: 8080
