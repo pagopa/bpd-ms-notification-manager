@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>bpd-ms-notification-manager</artifactId>
+        <groupId>it.gov.pagopa.bpd.ms</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <groupId>it.gov.pagopa.bpd.ms.notification_manager</groupId>
+    <artifactId>bpd-ms-notification-manager-core</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <dependencies>
+        <dependency>
+            <groupId>it.gov.pagopa.bpd.ms.notification_manager.integration</groupId>
+            <artifactId>bpd-ms-notification-manager-integration-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>it.gov.pagopa.bpd.ms.notification_manager.integration</groupId>
+            <artifactId>bpd-ms-notification-manager-integration-rest</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+</project>
