@@ -1,7 +1,11 @@
 package it.gov.pagopa.bpd.notification_manager.service;
 
 
+import eu.sia.meda.service.BaseService;
+import it.gov.pagopa.bpd.notification_manager.connector.NotificationRestClient;
+import it.gov.pagopa.bpd.notification_manager.connector.model.NotificationDTO;
 import it.gov.pagopa.bpd.notification_manager.dao.CitizenDAO;
+import it.gov.pagopa.bpd.notification_manager.mapper.NotificationDtoMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -14,22 +18,36 @@ import java.util.List;
  */
 @Service
 @Slf4j
-class NotificationServiceImpl implements NotificationService {
+class NotificationServiceImpl extends BaseService implements NotificationService {
 
     private final CitizenDAO citizenDAO;
+    private final NotificationDtoMapper notificationDtoMapper;
+    private final NotificationRestClient notificationRestClient;
 
     @Autowired
-    NotificationServiceImpl(CitizenDAO citizenDAO) {
+    NotificationServiceImpl(CitizenDAO citizenDAO, NotificationDtoMapper notificationDtoMapper,
+                            NotificationRestClient notificationRestClient) {
         this.citizenDAO = citizenDAO;
+        this.notificationDtoMapper = notificationDtoMapper;
+        this.notificationRestClient = notificationRestClient;
     }
 
 
     @Override
     @Scheduled(cron = "0 5 0 * * ?") // Everyday at 00:05 AM
-    public List<String> findFiscalCodesWithUnsetPayoffInstr() {
+    public void findFiscalCodesWithUnsetPayoffInstr() {
+        List<String> citizensFC = citizenDAO.findFiscalCodesWithUnsetPayoffInstr();
+        for (String citizenCf : citizensFC) {
+            NotificationDTO dto = notificationDtoMapper.NotificationDtoMapper(citizenCf);
+            notificationRestClient.notify(dto);
+        }
+    }
 
-        List<String> citizensCF = citizenDAO.findFiscalCodesWithUnsetPayoffInstr();
+    @Override
+    @Scheduled(cron = "0 47 12 * * ?") // Everyday at 12:47 AM
+    public void updateRanking() {
         citizenDAO.update_ranking();
-        return citizensCF;
     }
 }
+
+

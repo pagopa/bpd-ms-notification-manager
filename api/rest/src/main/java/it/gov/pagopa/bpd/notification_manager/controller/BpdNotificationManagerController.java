@@ -1,13 +1,7 @@
 package it.gov.pagopa.bpd.notification_manager.controller;
 
 import io.swagger.annotations.Api;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-
-import java.util.List;
 
 /**
  * Controller to expose MicroService
@@ -16,7 +10,7 @@ import java.util.List;
 @RequestMapping("/bpd/notification-manager")
 public interface BpdNotificationManagerController {
 
-    @GetMapping(produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    @ResponseStatus(HttpStatus.OK)
-    List<String> find();
+//    @GetMapping(produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+//    @ResponseStatus(HttpStatus.OK)
+//    List<String> find();
 }

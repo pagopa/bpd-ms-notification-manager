@@ -13,7 +13,7 @@ public class NotificationDTO {
     private SenderMetadata sender_metadata;
 
     @Data
-    public class NotificationMessage {
+    public static class NotificationMessage {
         @NotBlank
         private String id;
         @NotBlank
@@ -27,17 +27,15 @@ public class NotificationDTO {
     }
 
     @Data
-    public class Content {
+    public static class Content {
         @NotBlank
         private String subject;
         @NotBlank
         private String markdown;
-        @NotBlank
-        private String due_date;
     }
 
     @Data
-    public class SenderMetadata {
+    public static class SenderMetadata {
         @NotBlank
         private String service_name;
         @NotBlank

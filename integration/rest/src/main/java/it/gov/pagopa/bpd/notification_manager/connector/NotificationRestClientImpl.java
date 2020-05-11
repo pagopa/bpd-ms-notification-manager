@@ -1,12 +1,15 @@
 package it.gov.pagopa.bpd.notification_manager.connector;
 
+import eu.sia.meda.service.BaseService;
 import it.gov.pagopa.bpd.notification_manager.connector.model.NotificationDTO;
 import it.gov.pagopa.bpd.notification_manager.connector.model.NotificationResource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 
-public class NotificationRestClientImpl implements NotificationRestClient {
+@Service
+public class NotificationRestClientImpl extends BaseService implements NotificationRestClient {
 
     static final String TOKEN = "token";
 
