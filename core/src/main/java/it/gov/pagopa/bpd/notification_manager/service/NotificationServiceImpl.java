@@ -34,12 +34,15 @@ class NotificationServiceImpl extends BaseService implements NotificationService
 
 
     @Override
-    @Scheduled(cron = "0 5 0 * * ?") // Everyday at 00:05 AM
+    @Scheduled(cron = "0 40 10 * * ?") // Everyday at 10:40 AM
     public void findFiscalCodesWithUnsetPayoffInstr() {
         List<String> citizensFC = citizenDAO.findFiscalCodesWithUnsetPayoffInstr();
+
+        //TODO token mock
+        String TOKEN = "token";
         for (String citizenCf : citizensFC) {
             NotificationDTO dto = notificationDtoMapper.NotificationDtoMapper(citizenCf);
-            notificationRestClient.notify(dto);
+            notificationRestClient.notify(dto, TOKEN);
         }
     }
 

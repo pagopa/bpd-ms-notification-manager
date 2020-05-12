@@ -21,5 +21,9 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>it.gov.pagopa.bpd.commons.integration</groupId>
+            <artifactId>bpd-commons-integration-rest</artifactId>
+        </dependency>
     </dependencies>
 </project>

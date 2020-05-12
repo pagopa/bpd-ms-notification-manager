@@ -39,7 +39,7 @@ public class NotificationServiceImplTest {
 
     @PostConstruct
     public void configureMock() {
-        BDDMockito.when(restClientMock.notify(Mockito.any(NotificationDTO.class)))
+        BDDMockito.when(restClientMock.notify(Mockito.any(NotificationDTO.class), Mockito.anyString()))
                 .thenAnswer(invocation -> {
                     NotificationResource result = new NotificationResource();
                     result.setMessage("ok");
@@ -61,7 +61,8 @@ public class NotificationServiceImplTest {
         notificationService.findFiscalCodesWithUnsetPayoffInstr();
 
         verify(citizenDAOMock, only()).findFiscalCodesWithUnsetPayoffInstr();
-        verify(restClientMock, times(3)).notify(Mockito.any(NotificationDTO.class));
+        verify(restClientMock, times(3))
+                .notify(Mockito.any(NotificationDTO.class), Mockito.anyString());
     }
 
     @Test
