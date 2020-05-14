@@ -35,10 +35,10 @@ class NotificationServiceImpl extends BaseService implements NotificationService
 
     @Override
     @Scheduled(cron = "0 40 10 * * ?") // Everyday at 10:40 AM
-    public void findFiscalCodesWithUnsetPayoffInstr() {
+    public void notifyUnsetPayoffInstr() {
         List<String> citizensFC = citizenDAO.findFiscalCodesWithUnsetPayoffInstr();
 
-        //TODO token mock
+        //TODO token mocked
         String TOKEN = "token";
         for (String citizenCf : citizensFC) {
             NotificationDTO dto = notificationDtoMapper.NotificationDtoMapper(citizenCf);
@@ -48,8 +48,8 @@ class NotificationServiceImpl extends BaseService implements NotificationService
 
     @Override
     @Scheduled(cron = "0 47 12 * * ?") // Everyday at 12:47 AM
-    public void updateRanking() {
-        citizenDAO.update_ranking();
+    public void updateRankingAndFindWinners() {
+        citizenDAO.updateRankingAndFindWinners();
     }
 }
 

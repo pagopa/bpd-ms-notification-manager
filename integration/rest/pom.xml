@@ -25,5 +25,11 @@
             <groupId>it.gov.pagopa.bpd.commons.integration</groupId>
             <artifactId>bpd-commons-integration-rest</artifactId>
         </dependency>
+        <dependency>
+            <groupId>it.gov.pagopa.bpd.commons.integration</groupId>
+            <artifactId>bpd-commons-integration-rest</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

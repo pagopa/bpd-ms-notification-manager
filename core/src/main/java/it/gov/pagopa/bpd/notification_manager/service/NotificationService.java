@@ -6,8 +6,8 @@ package it.gov.pagopa.bpd.notification_manager.service;
  */
 public interface NotificationService {
 
-    void findFiscalCodesWithUnsetPayoffInstr();
+    void notifyUnsetPayoffInstr();
 
-    void updateRanking();
+    void updateRankingAndFindWinners();
 
 }

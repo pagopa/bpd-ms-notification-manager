@@ -20,12 +20,11 @@ class BpdNotificationManagerControllerImpl extends StatelessController implement
         this.notificationRestClient = notificationRestClient;
     }
 
-//    @Override
-//    public List<String> find() {
-//
-//        List<String> fiscalCodes = notificationService.findFiscalCodesWithUnsetPayoffInstr();
+    @Override
+    public void update() {
+
+        notificationService.updateRankingAndFindWinners();
 //        notificationRestClient.notify();
-//
-//        return fiscalCodes;
-//    }
+
+    }
 }

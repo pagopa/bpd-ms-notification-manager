@@ -58,7 +58,7 @@ public class NotificationServiceImplTest {
     @Test
     public void testFindFiscalCodesWithUnsetPayoffInstr() {
 
-        notificationService.findFiscalCodesWithUnsetPayoffInstr();
+        notificationService.notifyUnsetPayoffInstr();
 
         verify(citizenDAOMock, only()).findFiscalCodesWithUnsetPayoffInstr();
         verify(restClientMock, times(3))
@@ -68,8 +68,8 @@ public class NotificationServiceImplTest {
     @Test
     public void testUpdateRanking() {
 
-        notificationService.updateRanking();
-        verify(citizenDAOMock, only()).update_ranking();
-        verify(citizenDAOMock, times(1)).update_ranking();
+        notificationService.updateRankingAndFindWinners();
+        verify(citizenDAOMock, only()).updateRankingAndFindWinners();
+        verify(citizenDAOMock, times(1)).updateRankingAndFindWinners();
     }
 }

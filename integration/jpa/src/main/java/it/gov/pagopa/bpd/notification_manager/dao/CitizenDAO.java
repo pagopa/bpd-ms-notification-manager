@@ -1,6 +1,7 @@
 package it.gov.pagopa.bpd.notification_manager.dao;
 
 
+import it.gov.pagopa.bpd.notification_manager.dao.model.WinningCitizen;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -10,6 +11,6 @@ public interface CitizenDAO {
 
     List<String> findFiscalCodesWithUnsetPayoffInstr();
 
-    void update_ranking();
+    List<WinningCitizen> updateRankingAndFindWinners();
 
 }

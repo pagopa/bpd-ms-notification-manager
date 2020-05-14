@@ -6,6 +6,9 @@ import lombok.Data;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
+/**
+ * Data Transfer Object (input) for {@link it.gov.pagopa.bpd.notification_manager.connector.NotificationRestClient}
+ */
 @Data
 public class NotificationDTO {
 
