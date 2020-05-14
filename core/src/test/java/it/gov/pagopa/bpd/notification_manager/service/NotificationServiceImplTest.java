@@ -16,6 +16,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.annotation.PostConstruct;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import static org.mockito.Mockito.*;
@@ -66,7 +67,7 @@ public class NotificationServiceImplTest {
     }
 
     @Test
-    public void testUpdateRanking() {
+    public void testUpdateRanking() throws IOException {
 
         notificationService.updateRankingAndFindWinners();
         verify(citizenDAOMock, only()).updateRankingAndFindWinners();
