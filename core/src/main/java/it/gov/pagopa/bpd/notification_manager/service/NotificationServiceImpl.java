@@ -56,15 +56,19 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     public void updateRankingAndFindWinners() throws IOException {
         List<WinningCitizen> winners = citizenDAO.updateRankingAndFindWinners();
         if (!winners.isEmpty()) {
+            List<WinningCitizen> winnersForCSV = new ArrayList<>();
+            for (WinningCitizen winningCitizen : winners)
+                if (winningCitizen.getPayoff_instr_out() != null && !winningCitizen.getPayoff_instr_out().isEmpty())
+                    winnersForCSV.add(winningCitizen);
             File csvOutputFile = new File("C:/Users/acastagn/Desktop/test.csv");
             List<String> dataLines = new ArrayList<>();
-            for (WinningCitizen winner : winners) {
-                String sb = winner.getRanking_out().toString() + "," +
-                        winner.getFiscal_code_out() + "," +
-                        winner.getPayoff_instr_out() + "," +
-                        winner.getAw_period_out().toString() + "," +
-                        winner.getAw_period_start_out().toString() + "," +
-                        winner.getAw_period_end_out().toString();
+            for (WinningCitizen winnerForCSV : winnersForCSV) {
+                String sb = winnerForCSV.getRanking_out().toString() + "," +
+                        winnerForCSV.getFiscal_code_out() + "," +
+                        winnerForCSV.getPayoff_instr_out() + "," +
+                        winnerForCSV.getAw_period_out().toString() + "," +
+                        winnerForCSV.getAw_period_start_out().toString() + "," +
+                        winnerForCSV.getAw_period_end_out().toString();
                 dataLines.add(sb);
             }
             try (PrintWriter pw = new PrintWriter(csvOutputFile)) {
