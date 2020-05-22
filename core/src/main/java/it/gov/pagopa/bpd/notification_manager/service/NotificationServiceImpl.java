@@ -58,17 +58,17 @@ class NotificationServiceImpl extends BaseService implements NotificationService
         if (!winners.isEmpty()) {
             List<WinningCitizen> winnersForCSV = new ArrayList<>();
             for (WinningCitizen winningCitizen : winners)
-                if (winningCitizen.getPayoff_instr_out() != null && !winningCitizen.getPayoff_instr_out().isEmpty())
+                if (winningCitizen.getPayoffInstr() != null && !winningCitizen.getPayoffInstr().isEmpty())
                     winnersForCSV.add(winningCitizen);
             File csvOutputFile = new File("C:/Users/acastagn/Desktop/test.csv");
             List<String> dataLines = new ArrayList<>();
             for (WinningCitizen winnerForCSV : winnersForCSV) {
-                String sb = winnerForCSV.getRanking_out().toString() + "," +
-                        winnerForCSV.getFiscal_code_out() + "," +
-                        winnerForCSV.getPayoff_instr_out() + "," +
-                        winnerForCSV.getAw_period_out().toString() + "," +
-                        winnerForCSV.getAw_period_start_out().toString() + "," +
-                        winnerForCSV.getAw_period_end_out().toString();
+                String sb = winnerForCSV.getRanking().toString() + "," +
+                        winnerForCSV.getFiscalCode() + "," +
+                        winnerForCSV.getPayoffInstr() + "," +
+                        winnerForCSV.getAwardPeriodId().toString() + "," +
+                        winnerForCSV.getAwardPeriodStart().toString() + "," +
+                        winnerForCSV.getAwardPeriodEnd().toString();
                 dataLines.add(sb);
             }
             try (PrintWriter pw = new PrintWriter(csvOutputFile)) {
