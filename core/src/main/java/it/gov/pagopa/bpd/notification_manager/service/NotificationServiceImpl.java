@@ -63,7 +63,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
             File csvOutputFile = new File("C:/Users/acastagn/Desktop/test.csv");
             List<String> dataLines = new ArrayList<>();
             for (WinningCitizen winnerForCSV : winnersForCSV) {
-                String sb = winnerForCSV.getRanking().toString() + "," +
+                String sb = winnerForCSV.getAmount().toString() + "," +
                         winnerForCSV.getFiscalCode() + "," +
                         winnerForCSV.getPayoffInstr() + "," +
                         winnerForCSV.getAwardPeriodId().toString() + "," +
