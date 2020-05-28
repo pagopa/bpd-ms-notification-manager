@@ -1,9 +1,9 @@
 package it.gov.pagopa.bpd.notification_manager.service;
 
 import it.gov.pagopa.bpd.notification_manager.connector.NotificationRestClient;
+import it.gov.pagopa.bpd.notification_manager.connector.jpa.CitizenDAO;
 import it.gov.pagopa.bpd.notification_manager.connector.model.NotificationDTO;
 import it.gov.pagopa.bpd.notification_manager.connector.model.NotificationResource;
-import it.gov.pagopa.bpd.notification_manager.dao.CitizenDAO;
 import it.gov.pagopa.bpd.notification_manager.mapper.NotificationDtoMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;

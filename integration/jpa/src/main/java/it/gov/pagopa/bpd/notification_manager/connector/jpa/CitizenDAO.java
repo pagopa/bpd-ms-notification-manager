@@ -1,7 +1,7 @@
-package it.gov.pagopa.bpd.notification_manager.dao;
+package it.gov.pagopa.bpd.notification_manager.connector.jpa;
 
 
-import it.gov.pagopa.bpd.notification_manager.dao.model.WinningCitizen;
+import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.WinningCitizen;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;

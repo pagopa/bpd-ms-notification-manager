@@ -3,9 +3,9 @@ package it.gov.pagopa.bpd.notification_manager.service;
 
 import eu.sia.meda.service.BaseService;
 import it.gov.pagopa.bpd.notification_manager.connector.NotificationRestClient;
+import it.gov.pagopa.bpd.notification_manager.connector.jpa.CitizenDAO;
+import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.WinningCitizen;
 import it.gov.pagopa.bpd.notification_manager.connector.model.NotificationDTO;
-import it.gov.pagopa.bpd.notification_manager.dao.CitizenDAO;
-import it.gov.pagopa.bpd.notification_manager.dao.model.WinningCitizen;
 import it.gov.pagopa.bpd.notification_manager.mapper.NotificationDtoMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

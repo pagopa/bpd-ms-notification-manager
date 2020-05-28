@@ -1,6 +1,6 @@
-package it.gov.pagopa.bpd.notification_manager.dao;
+package it.gov.pagopa.bpd.notification_manager.connector.jpa;
 
-import it.gov.pagopa.bpd.notification_manager.dao.model.WinningCitizen;
+import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.WinningCitizen;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityManager;
@@ -11,7 +11,7 @@ import java.util.List;
 public class CitizenDAOImpl implements CitizenDAO {
 
     public static final String QUERY_CHECK_IBAN = "SELECT fiscal_code_s FROM bpd_citizen WHERE payoff_instr_s IS NULL";
-    public static final String QUERY_UPDATE_RANKING = "SELECT * from bpd_test.update_bpd_citizen_ranking();";
+    public static final String QUERY_UPDATE_RANKING = "SELECT * from update_bpd_citizen_ranking();";
     @PersistenceContext
     private EntityManager em;
 

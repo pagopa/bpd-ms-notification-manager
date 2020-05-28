@@ -1,4 +1,4 @@
-package it.gov.pagopa.bpd.notification_manager.dao.model;
+package it.gov.pagopa.bpd.notification_manager.connector.jpa.model;
 
 import lombok.Data;
 
