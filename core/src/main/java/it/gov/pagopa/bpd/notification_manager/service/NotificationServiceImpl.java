@@ -9,6 +9,7 @@ import it.gov.pagopa.bpd.notification_manager.connector.model.NotificationDTO;
 import it.gov.pagopa.bpd.notification_manager.mapper.NotificationDtoMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -28,18 +29,21 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     private final CitizenDAO citizenDAO;
     private final NotificationDtoMapper notificationDtoMapper;
     private final NotificationRestClient notificationRestClient;
+    private final String outputFilePath;
 
     @Autowired
     NotificationServiceImpl(CitizenDAO citizenDAO, NotificationDtoMapper notificationDtoMapper,
-                            NotificationRestClient notificationRestClient) {
+                            NotificationRestClient notificationRestClient,
+                            @Value("ore.NotificationService.updateRankingAndFindWinners.outputFilePath") String outputFilePath) {
         this.citizenDAO = citizenDAO;
         this.notificationDtoMapper = notificationDtoMapper;
         this.notificationRestClient = notificationRestClient;
+        this.outputFilePath = outputFilePath;
     }
 
 
     @Override
-    @Scheduled(cron = "0 40 10 * * ?") // Everyday at 10:40 AM
+    @Scheduled(cron = "${core.NotificationService.notifyUnsetPayoffInstr.scheduler}") // Everyday at 10:40 AM
     public void notifyUnsetPayoffInstr() {
         List<String> citizensFC = citizenDAO.findFiscalCodesWithUnsetPayoffInstr();
 
@@ -52,7 +56,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     }
 
     @Override
-    @Scheduled(cron = "0 47 12 * * ?") // Everyday at 12:47 AM
+    @Scheduled(cron = "${core.NotificationService.updateRankingAndFindWinners.scheduler}") // Everyday at 12:47 AM
     public void updateRankingAndFindWinners() throws IOException {
         List<WinningCitizen> winners = citizenDAO.updateRankingAndFindWinners();
         if (!winners.isEmpty()) {
@@ -60,7 +64,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
             for (WinningCitizen winningCitizen : winners)
                 if (winningCitizen.getPayoffInstr() != null && !winningCitizen.getPayoffInstr().isEmpty())
                     winnersForCSV.add(winningCitizen);
-            File csvOutputFile = new File("C:/Users/acastagn/Desktop/test.csv");
+            File csvOutputFile = new File(outputFilePath);
             List<String> dataLines = new ArrayList<>();
             for (WinningCitizen winnerForCSV : winnersForCSV) {
                 String sb = winnerForCSV.getAmount().toString() + "," +
