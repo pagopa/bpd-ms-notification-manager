@@ -2,29 +2,15 @@
   "request": {
     "method": "POST",
     "urlPath": "/notify",
-    "queryParameters": {
-      "TOKEN": {
-        "equalTo": "token"
-      }
-    },
     "bodyPatterns": [
       {
         "equalToJson": {
-          "message": {
-            "id": "id",
-            "fiscal_code": "test",
-            "created_at": "2020-04-17T12:23:00.749+02:00",
-            "content": {
-              "subject": "subject",
-              "markdown": "markdown"
-            },
-            "sender_service_id": "serviceId"
+          "time_to_live": 3600,
+          "content": {
+            "subject": "subject",
+            "markdown": "markdown"
           },
-          "sender_metadata": {
-            "service_name": "serviceName",
-            "organization_name": "organizationName",
-            "department_name": "departmentName"
-          }
+          "fiscal_code": "test"
         }
       }
     ]

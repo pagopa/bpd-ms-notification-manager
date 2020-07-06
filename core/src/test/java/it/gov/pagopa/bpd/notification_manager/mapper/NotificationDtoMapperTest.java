@@ -20,8 +20,9 @@ public class NotificationDtoMapperTest {
     @Test
     public void testNotificationDtoMapper() {
         String FC = "fiscalCode";
-        NotificationDTO notificationDTO = notificationDtoMapper.NotificationDtoMapper(FC);
+        NotificationDTO notificationDTO = notificationDtoMapper.NotificationDtoMapper(
+                FC, 3600L, "subject", "markdown");
 
-        assertEquals(notificationDTO.getMessage().getFiscal_code(), FC);
+        assertEquals(notificationDTO.getFiscalCode(), FC);
     }
 }

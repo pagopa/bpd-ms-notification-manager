@@ -7,5 +7,5 @@ import lombok.Data;
  */
 @Data
 public class NotificationResource {
-    private String message;
+    private String id;
 }

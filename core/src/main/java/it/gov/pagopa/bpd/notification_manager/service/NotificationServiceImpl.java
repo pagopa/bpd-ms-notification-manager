@@ -3,9 +3,11 @@ package it.gov.pagopa.bpd.notification_manager.service;
 
 import eu.sia.meda.service.BaseService;
 import it.gov.pagopa.bpd.notification_manager.connector.NotificationRestClient;
+import it.gov.pagopa.bpd.notification_manager.connector.NotificationRestConnector;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.CitizenDAO;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.WinningCitizen;
 import it.gov.pagopa.bpd.notification_manager.connector.model.NotificationDTO;
+import it.gov.pagopa.bpd.notification_manager.connector.model.NotificationResource;
 import it.gov.pagopa.bpd.notification_manager.mapper.NotificationDtoMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,55 +30,80 @@ class NotificationServiceImpl extends BaseService implements NotificationService
 
     private final CitizenDAO citizenDAO;
     private final NotificationDtoMapper notificationDtoMapper;
-    private final NotificationRestClient notificationRestClient;
+    private final NotificationRestConnector notificationRestConnector;
     private final String outputFilePath;
+    private final Long timeToLive;
+    private final String subject;
+    private final String markdown;
 
     @Autowired
-    NotificationServiceImpl(CitizenDAO citizenDAO, NotificationDtoMapper notificationDtoMapper,
-                            NotificationRestClient notificationRestClient,
-                            @Value("ore.NotificationService.updateRankingAndFindWinners.outputFilePath") String outputFilePath) {
+    NotificationServiceImpl(
+            CitizenDAO citizenDAO, NotificationDtoMapper notificationDtoMapper,
+            NotificationRestConnector notificationRestConnector,
+            @Value("${core.NotificationService.updateRankingAndFindWinners.outputFilePath}") String outputFilePath,
+            @Value("${core.NotificationService.notifyUnsetPayoffInstr.ttl}") Long timeToLive,
+            @Value("${core.NotificationService.notifyUnsetPayoffInstr.subject}") String subject,
+            @Value("${core.NotificationService.notifyUnsetPayoffInstr.markdown}") String markdown) {
         this.citizenDAO = citizenDAO;
         this.notificationDtoMapper = notificationDtoMapper;
-        this.notificationRestClient = notificationRestClient;
+        this.notificationRestConnector = notificationRestConnector;
         this.outputFilePath = outputFilePath;
+        this.timeToLive = timeToLive;
+        this.subject = subject;
+        this.markdown = markdown;
     }
 
 
     @Override
-    @Scheduled(cron = "${core.NotificationService.notifyUnsetPayoffInstr.scheduler}") // Everyday at 10:40 AM
+    @Scheduled(cron = "${core.NotificationService.notifyUnsetPayoffInstr.scheduler}")
     public void notifyUnsetPayoffInstr() {
-        List<String> citizensFC = citizenDAO.findFiscalCodesWithUnsetPayoffInstr();
-
-        //TODO token mocked
-        String TOKEN = "token";
-        for (String citizenCf : citizensFC) {
-            NotificationDTO dto = notificationDtoMapper.NotificationDtoMapper(citizenCf);
-            notificationRestClient.notify(dto, TOKEN);
+        try {
+            List<String> citizensFC = citizenDAO.findFiscalCodesWithUnsetPayoffInstr();
+            for (String citizenCf : citizensFC) {
+                NotificationDTO dto = notificationDtoMapper.NotificationDtoMapper(
+                        citizenCf, timeToLive, subject, markdown);
+                NotificationResource resouce = notificationRestConnector.notify(dto);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Notified citizen, notification id: " + resouce.getId());
+                }
+            }
+        } catch (Exception e) {
+            if (logger.isErrorEnabled()) {
+                logger.error(e.getMessage(), e);
+            }
         }
     }
 
     @Override
-    @Scheduled(cron = "${core.NotificationService.updateRankingAndFindWinners.scheduler}") // Everyday at 12:47 AM
+    @Scheduled(cron = "${core.NotificationService.updateRankingAndFindWinners.scheduler}")
     public void updateRankingAndFindWinners() throws IOException {
-        List<WinningCitizen> winners = citizenDAO.updateRankingAndFindWinners();
-        if (!winners.isEmpty()) {
-            List<WinningCitizen> winnersForCSV = new ArrayList<>();
-            for (WinningCitizen winningCitizen : winners)
-                if (winningCitizen.getPayoffInstr() != null && !winningCitizen.getPayoffInstr().isEmpty())
-                    winnersForCSV.add(winningCitizen);
-            File csvOutputFile = new File(outputFilePath);
-            List<String> dataLines = new ArrayList<>();
-            for (WinningCitizen winnerForCSV : winnersForCSV) {
-                String sb = winnerForCSV.getAmount().toString() + "," +
-                        winnerForCSV.getFiscalCode() + "," +
-                        winnerForCSV.getPayoffInstr() + "," +
-                        winnerForCSV.getAwardPeriodId().toString() + "," +
-                        winnerForCSV.getAwardPeriodStart().toString() + "," +
-                        winnerForCSV.getAwardPeriodEnd().toString();
-                dataLines.add(sb);
+        try {
+
+            List<WinningCitizen> winners = citizenDAO.updateRankingAndFindWinners();
+            if (!winners.isEmpty()) {
+                List<WinningCitizen> winnersForCSV = new ArrayList<>();
+                for (WinningCitizen winningCitizen : winners)
+                    if (winningCitizen.getPayoffInstr() != null && !winningCitizen.getPayoffInstr().isEmpty())
+                        winnersForCSV.add(winningCitizen);
+                File csvOutputFile = new File(outputFilePath);
+                List<String> dataLines = new ArrayList<>();
+                for (WinningCitizen winnerForCSV : winnersForCSV) {
+                    String sb = winnerForCSV.getAmount().toString() + "," +
+                            winnerForCSV.getFiscalCode() + "," +
+                            winnerForCSV.getPayoffInstr() + "," +
+                            winnerForCSV.getAwardPeriodId().toString() + "," +
+                            winnerForCSV.getAwardPeriodStart().toString() + "," +
+                            winnerForCSV.getAwardPeriodEnd().toString();
+                    dataLines.add(sb);
+                }
+                try (PrintWriter pw = new PrintWriter(csvOutputFile)) {
+                    dataLines.forEach(pw::println);
+                }
             }
-            try (PrintWriter pw = new PrintWriter(csvOutputFile)) {
-                dataLines.forEach(pw::println);
+            //TODO: Send results through SFTP channel
+        } catch (Exception e) {
+            if (logger.isErrorEnabled()) {
+                logger.error(e.getMessage(), e);
             }
         }
     }

@@ -3,6 +3,7 @@ package it.gov.pagopa.bpd.notification_manager.connector;
 import com.github.tomakehurst.wiremock.junit.WireMockClassRule;
 import it.gov.pagopa.bpd.common.connector.BaseFeignRestClientTest;
 import it.gov.pagopa.bpd.notification_manager.connector.config.BpdNotificationManagerRestConnectorConfig;
+import it.gov.pagopa.bpd.notification_manager.connector.model.MessageContent;
 import it.gov.pagopa.bpd.notification_manager.connector.model.NotificationDTO;
 import it.gov.pagopa.bpd.notification_manager.connector.model.NotificationResource;
 import lombok.SneakyThrows;
@@ -24,7 +25,7 @@ import static org.junit.Assert.assertNotNull;
         locations = "classpath:config/rest-client.properties",
         properties = "spring.application.name=bpd-ms-notification-manager-integration-rest")
 @ContextConfiguration(initializers = NotificationRestClientTest.RandomPortInitializer.class,
-        classes = BpdNotificationManagerRestConnectorConfig.class)
+        classes = {NotificationRestConnectorImpl.class, BpdNotificationManagerRestConnectorConfig.class})
 public class NotificationRestClientTest extends BaseFeignRestClientTest {
 
     @ClassRule
@@ -35,25 +36,17 @@ public class NotificationRestClientTest extends BaseFeignRestClientTest {
 
     @Test
     public void notify_test() {
-        final String token = "token";
-        final NotificationDTO.Content content = new NotificationDTO.Content();
-        content.setSubject("subject");
-        content.setMarkdown("markdown");
-        final NotificationDTO.NotificationMessage message = new NotificationDTO.NotificationMessage();
-        message.setId("id");
-        message.setFiscal_code("test");
-        message.setCreated_at("2020-04-17T12:23:00.749+02:00");
-        message.setSender_service_id("serviceId");
-        message.setContent(content);
-        final NotificationDTO.SenderMetadata senderMetadata = new NotificationDTO.SenderMetadata();
-        senderMetadata.setService_name("serviceName");
-        senderMetadata.setOrganization_name("organizationName");
-        senderMetadata.setDepartment_name("departmentName");
-        final NotificationDTO notificationDTO = new NotificationDTO();
-        notificationDTO.setMessage(message);
-        notificationDTO.setSender_metadata(senderMetadata);
+        final NotificationDTO notification = new NotificationDTO();
+        notification.setFiscalCode("test");
+        notification.setTimeToLive(3600L);
 
-        final NotificationResource actualResponse = restClient.notify(notificationDTO, token);
+        MessageContent messageContent = new MessageContent();
+        messageContent.setSubject("subject");
+        messageContent.setMarkdown("markdown");
+
+        notification.setContent(messageContent);
+
+        final NotificationResource actualResponse = restConnector.notify(notification);
 
         assertNotNull(actualResponse);
         assertEquals("ok", actualResponse.getMessage());
@@ -61,6 +54,9 @@ public class NotificationRestClientTest extends BaseFeignRestClientTest {
 
     @Autowired
     private NotificationRestClient restClient;
+
+    @Autowired
+    private NotificationRestConnector restConnector;
 
     public static class RandomPortInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
         @SneakyThrows
