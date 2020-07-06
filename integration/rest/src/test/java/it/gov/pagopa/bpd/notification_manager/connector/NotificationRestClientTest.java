@@ -49,7 +49,7 @@ public class NotificationRestClientTest extends BaseFeignRestClientTest {
         final NotificationResource actualResponse = restConnector.notify(notification);
 
         assertNotNull(actualResponse);
-        assertEquals("ok", actualResponse.getMessage());
+        assertEquals("ok", actualResponse.getId());
     }
 
     @Autowired

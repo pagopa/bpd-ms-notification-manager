@@ -43,7 +43,7 @@ public class NotificationServiceImplTest {
         BDDMockito.when(restClientMock.notify(Mockito.any(NotificationDTO.class), Mockito.anyString()))
                 .thenAnswer(invocation -> {
                     NotificationResource result = new NotificationResource();
-                    result.setMessage("ok");
+                    result.setId("ok");
                     return result;
                 });
         BDDMockito.when(citizenDAOMock.findFiscalCodesWithUnsetPayoffInstr())
