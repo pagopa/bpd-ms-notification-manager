@@ -1,6 +1,7 @@
 package it.gov.pagopa.bpd.notification_manager.service;
 
 import it.gov.pagopa.bpd.notification_manager.connector.NotificationRestClient;
+import it.gov.pagopa.bpd.notification_manager.connector.NotificationRestConnector;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.CitizenDAO;
 import it.gov.pagopa.bpd.notification_manager.connector.model.NotificationDTO;
 import it.gov.pagopa.bpd.notification_manager.connector.model.NotificationResource;
@@ -13,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.annotation.PostConstruct;
@@ -22,11 +24,15 @@ import java.util.ArrayList;
 import static org.mockito.Mockito.*;
 
 @RunWith(SpringRunner.class)
+@TestPropertySource(properties = {
+        "core.NotificationService.notifyUnsetPayoffInstr.ttl=3600"
+})
 @ContextConfiguration(classes = NotificationServiceImpl.class)
 public class NotificationServiceImplTest {
 
+
     @MockBean
-    private NotificationRestClient restClientMock;
+    private NotificationRestConnector restConnector;
 
     @MockBean
     private CitizenDAO citizenDAOMock;
@@ -40,7 +46,7 @@ public class NotificationServiceImplTest {
 
     @PostConstruct
     public void configureMock() {
-        BDDMockito.when(restClientMock.notify(Mockito.any(NotificationDTO.class), Mockito.anyString()))
+        BDDMockito.when(restConnector.notify(Mockito.any(NotificationDTO.class)))
                 .thenAnswer(invocation -> {
                     NotificationResource result = new NotificationResource();
                     result.setId("ok");
@@ -62,8 +68,8 @@ public class NotificationServiceImplTest {
         notificationService.notifyUnsetPayoffInstr();
 
         verify(citizenDAOMock, only()).findFiscalCodesWithUnsetPayoffInstr();
-        verify(restClientMock, times(3))
-                .notify(Mockito.any(NotificationDTO.class), Mockito.anyString());
+        verify(restConnector, times(3))
+                .notify(Mockito.any(NotificationDTO.class));
     }
 
     @Test

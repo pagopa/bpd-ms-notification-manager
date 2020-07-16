@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "POST",
-    "urlPath": "/notify",
+    "urlPath": "/c/progetto-io/messages",
     "bodyPatterns": [
       {
         "equalToJson": {
@@ -9,6 +9,7 @@
           "content": {
             "subject": "subject",
             "markdown": "markdown"
+
           },
           "fiscal_code": "test"
         }
@@ -18,7 +19,7 @@
   "response": {
     "status": "200",
     "jsonBody": {
-      "message": "ok"
+      "id": "ok"
     },
     "headers": {
       "Content-Type": "application/json"
