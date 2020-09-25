@@ -1,0 +1,164 @@
+# Deploy to Azure Kubernetes Service
+# Build and push image to Azure Container Registry; Deploy to Azure Kubernetes Service
+# https://docs.microsoft.com/azure/devops/pipelines/languages/docker
+
+trigger:
+  branches:
+    include:
+      - master
+      - develop
+      - release/*
+      - features/*
+  paths:
+    include:
+      - api/*
+      - app/*
+      - core/*
+      - integration/*
+      - pom.xml
+
+resources:
+  - repo: self
+
+variables:
+
+  TZ: 'Europe/Rome'
+
+  # Wiremock Port
+  WiremockPort: '8080'
+  REST_CLIENT_READ_TIMEOUT: '10000'
+  REST_CLIENT_CONNECT_TIMEOUT: '10000'
+
+  dockerfileRelativePath: 'Dockerfile'
+
+  # Agent VM image name for Build
+  vmImageNameDefault: 'ubuntu-latest'
+
+  # Image Repository Name
+  imageRepository: 'bpdmsnotificationmanager'
+
+  isToDeploy: $[and(ne(variables['Build.Reason'], 'PullRequest'), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release')))]
+  isSIT: $[eq(variables['Build.SourceBranch'], 'refs/heads/release/st')]
+  isUAT: $[eq(variables['Build.SourceBranch'], 'refs/heads/release/uat')]
+
+  ${{ if eq(variables.isSIT, true) }}:
+    dockerRegistryServiceConnection: 'cstarregistry-connection'
+    containerRegistry: 'cstarregistry.azurecr.io'
+    deployment: deployment-sit
+    imagePullSecret: 'cstarregistry-auth'
+  ${{ if eq(variables.isUAT, true) }}:
+    dockerRegistryServiceConnection: 'cstaruatregistry-connection'
+    containerRegistry: 'cstaruatregistry.azurecr.io'
+    deployment: deployment-uat
+    imagePullSecret: 'cstaruatregistry-auth'
+  ${{ if and(ne(variables.isSIT, true), ne(variables.isUAT, true)) }}:
+    dockerRegistryServiceConnection: 'cstarregistry-connection'
+
+stages:
+  - stage: Build
+    displayName: Build stage
+    jobs:
+      - job: Build
+        displayName: Build
+        pool:
+          vmImage: $(vmImageNameDefault)
+        steps:
+          - task: DownloadSecureFile@1
+            displayName: 'download settings.xml for Maven'
+            name: settingsxml
+            inputs:
+              secureFile: 'settings.xml'
+              retryCount: '2'
+          - task: Maven@3
+            inputs:
+              mavenPomFile: 'pom.xml'
+              goals: 'deploy'
+              options: '-B -s $(settingsxml.secureFilePath)'
+              publishJUnitResults: true
+              testResultsFiles: '**/surefire-reports/TEST-*.xml'
+              codeCoverageToolOption: 'JaCoCo'
+              codeCoverageClassFilter: '+:it.gov.pagopa.**,-:**.*Config,-:**.model.**,-:**.enums.**,-:**.*Constants,-:**.*Application,-:**.*Test,-:**.*Test.**'
+              javaHomeOption: 'JDKVersion'
+              jdkVersionOption: '1.8'
+              mavenVersionOption: 'Default'
+              mavenOptions: '-Xmx3072m'
+              mavenAuthenticateFeed: false
+              effectivePomSkip: true
+              sonarQubeRunAnalysis: false
+          - task: Docker@2
+            displayName: Build and push an image to container registry
+            condition: and(succeeded(), eq(variables.isToDeploy, true))
+            inputs:
+              containerRegistry: '$(dockerRegistryServiceConnection)'
+              repository: '$(imageRepository)'
+              command: 'buildAndPush'
+              Dockerfile: '$(Build.Repository.LocalPath)/$(dockerfileRelativePath)'
+              buildContext: '$(Build.Repository.LocalPath)'
+              tags: |
+                $(Build.BuildId)
+                latest
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Atrifact manifests'
+            condition: and(succeeded(), eq(variables.isToDeploy, true))
+            inputs:
+              targetPath: '$(Build.Repository.LocalPath)/manifests'
+              artifact: 'manifests'
+              publishLocation: 'pipeline'
+
+  - stage: Deploy
+    displayName: Deploy stage
+    dependsOn: Build
+    condition: and(succeeded(), eq(variables.isToDeploy, true))
+
+    jobs:
+      - deployment: Deploy1
+        displayName: Deploy SIT
+        condition: eq(variables.isSIT, true)
+        pool:
+          vmImage: $(vmImageNameDefault)
+        environment: 'sit.bpd-test'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: KubernetesManifest@0
+                  displayName: Deploy to Kubernetes cluster
+                  inputs:
+                    action: deploy
+                    manifests: |
+                      $(Pipeline.Workspace)/manifests/$(deployment).yml
+                      $(Pipeline.Workspace)/manifests/service.yml
+                    imagePullSecrets: |
+                      $(imagePullSecret)
+                    containers: |
+                      $(containerRegistry)/$(imageRepository):$(Build.BuildId)
+
+      - deployment: Deploy2
+        displayName: Deploy UAT
+        condition: eq(variables.isUAT, true)
+        pool:
+          name: uat_agent_pool
+          demands:
+            - agent.name -equals ddsrpst01
+        environment: 'uat'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: none
+                - task: DownloadPipelineArtifact@2
+                  inputs:
+                    buildType: 'current'
+                    artifactName: 'manifests'
+                    targetPath: '$(Pipeline.Workspace)/manifests'
+                - task: KubernetesManifest@0
+                  displayName: Deploy to Kubernetes cluster
+                  inputs:
+                    action: 'deploy'
+                    kubernetesServiceConnection: 'ddsakstest-self-connection-bpd-uat'
+                    namespace: 'bpd-uat'
+                    manifests: |
+                      $(Pipeline.Workspace)/manifests/$(deployment).yml
+                      $(Pipeline.Workspace)/manifests/service.yml
+                    containers: '$(containerRegistry)/$(imageRepository):$(Build.BuildId)'
+                    imagePullSecrets: '$(imagePullSecret)'
