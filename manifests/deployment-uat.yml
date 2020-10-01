@@ -23,6 +23,8 @@ spec:
             - configMapRef:
                 name: eventhub-logging
             - configMapRef:
+                name: rest-client
+            - configMapRef:
                 name: bpdmsnotificationmanager
             - configMapRef:
                 name: jvm
