@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bpdmsnotificationmanager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bpdmsnotificationmanager
+  template:
+    metadata:
+      labels:
+        app: bpdmsnotificationmanager
+    spec:
+      containers:
+        - name: bpdmsnotificationmanager
+          image: cstaruatregistry.azurecr.io/bpdmsnotificationmanager
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - secretRef:
+                name: postgres-credentials
+            - configMapRef:
+                name: eventhub-logging
+            - configMapRef:
+                name: rest-client
+            - configMapRef:
+                name: bpdmsnotificationmanager
+            - configMapRef:
+                name: jvm
+      hostAliases:
+        - hostnames:
+            - bpd-event-uat.servicebus.windows.net
+          ip: 10.70.67.5
