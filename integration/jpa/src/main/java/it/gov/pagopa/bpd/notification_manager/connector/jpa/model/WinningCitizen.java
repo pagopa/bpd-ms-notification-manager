@@ -21,8 +21,8 @@ public class WinningCitizen {
     @Column(name = "aw_period_out")
     private Long awardPeriodId;
 
-    @Column(name = "ranking_out")
-    private Long ranking;
+    @Column(name = "cashback_out")
+    private Long cashback;
 
     @Column(name = "amount_out")
     private Long amount;
