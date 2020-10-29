@@ -75,22 +75,6 @@ stages:
             inputs:
               secureFile: 'settings.xml'
               retryCount: '2'
-          - task: Maven@3
-            inputs:
-              mavenPomFile: 'pom.xml'
-              goals: 'deploy'
-              options: '-B -s $(settingsxml.secureFilePath) -Dmaven.test.skip=true'
-#              publishJUnitResults: true
-#              testResultsFiles: '**/surefire-reports/TEST-*.xml'
-#              codeCoverageToolOption: 'JaCoCo'
-#              codeCoverageClassFilter: '+:it.gov.pagopa.**,-:**.*Config,-:**.model.**,-:**.enums.**,-:**.*Constants,-:**.*Application,-:**.*Test,-:**.*Test.**'
-              javaHomeOption: 'JDKVersion'
-              jdkVersionOption: '1.8'
-              mavenVersionOption: 'Default'
-              mavenOptions: '-Xmx3072m'
-              mavenAuthenticateFeed: false
-              effectivePomSkip: true
-              sonarQubeRunAnalysis: false
           - task: Bash@3
             displayName: Get POM version
             name: getpomversion
