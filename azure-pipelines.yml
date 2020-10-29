@@ -101,6 +101,15 @@ stages:
                 echo "##vso[task.setvariable variable=pomversion]$version"
                 echo $POMVERSION
               failOnStderr: true      
+          - task: Bash@3
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo 'POMVERSION'
+                echo $POMVERSION
+                echo 'VERSION'
+                echo $VERSION
+              failOnStderr: true              
           - task: Docker@2
             displayName: Build and push an image to container registry
             condition: and(succeeded(), eq(variables.isToDeploy, true))
@@ -140,12 +149,14 @@ stages:
               steps:
                 - download: none
                 - task: Bash@3
-                  displayName: Get POM version
                   inputs:
                     targetType: 'inline'
                     script: |
+                      echo 'POMVERSION'
                       echo $POMVERSION
-                    failOnStderr: true  
+                      echo 'VERSION'
+                      echo $VERSION
+                    failOnStderr: true
                 - task: DownloadPipelineArtifact@2
                   inputs:
                     buildType: 'current'
@@ -161,7 +172,7 @@ stages:
                     imagePullSecrets: |
                       $(imagePullSecret)
                     containers: |
-                      $(containerRegistry)/$(imageRepository):$(Build.BuildId)
+                      $(containerRegistry)/$(imageRepository):$(pomversion)
 
       - deployment: Deploy2
         displayName: Deploy UAT
@@ -188,7 +199,7 @@ stages:
                     manifests: |
                       $(Pipeline.Workspace)/manifests/$(deployment).yml
                       $(Pipeline.Workspace)/manifests/service.yml
-                    containers: '$(containerRegistry)/$(imageRepository):$(Build.BuildId)'
+                    containers: '$(containerRegistry)/$(imageRepository):$(pomversion)'
                     imagePullSecrets: '$(imagePullSecret)'
       - deployment: Deploy3
         displayName: Deploy PROD
@@ -215,5 +226,5 @@ stages:
                     manifests: |
                       $(Pipeline.Workspace)/manifests/$(deployment).yml
                       $(Pipeline.Workspace)/manifests/service.yml
-                    containers: '$(containerRegistry)/$(imageRepository):$(Build.BuildId)'
+                    containers: '$(containerRegistry)/$(imageRepository):$(pomversion)'
                     imagePullSecrets: '$(imagePullSecret)'
