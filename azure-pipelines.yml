@@ -126,13 +126,7 @@ stages:
             deploy:
               steps:
                 - download: none
-                - task: Bash@3
-                  inputs:
-                    targetType: 'inline'
-                    script: |
-                      echo $POMVERSION
-                      echo $VERSION
-                    failOnStderr: true
+                - script: echo $(varFromA)
       - deployment: Deploy2
         displayName: Deploy UAT
         condition: eq(variables.isUAT, true)
