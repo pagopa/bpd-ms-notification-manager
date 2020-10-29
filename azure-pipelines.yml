@@ -143,7 +143,7 @@ stages:
                   inputs:
                     targetType: 'inline'
                     script: |
-                      echo $(pomversion)
+                      echo $pomversion
                     failOnStderr: true  
                 - task: DownloadPipelineArtifact@2
                   inputs:
