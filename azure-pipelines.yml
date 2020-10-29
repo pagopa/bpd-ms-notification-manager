@@ -97,7 +97,7 @@ stages:
     condition: and(succeeded(), eq(variables.isToDeploy, true))
     variables:
     # map the output variable from A into this job
-      varFromA: $[ dependencies.Build.outputs['getpomversion.pomversion'] ]
+      varFromA: $[ stageDependencies ]
     jobs:
       - deployment: Deploy1
         displayName: Deploy SIT
