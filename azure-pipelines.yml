@@ -22,6 +22,8 @@ resources:
 
 variables:
 
+  version: '0'
+
   TZ: 'Europe/Rome'
 
   # Wiremock Port
@@ -110,27 +112,6 @@ stages:
                 echo 'VERSION'
                 echo $VERSION
               failOnStderr: true              
-          - task: Docker@2
-            displayName: Build and push an image to container registry
-            condition: and(succeeded(), eq(variables.isToDeploy, true))
-            inputs:
-              containerRegistry: '$(dockerRegistryServiceConnection)'
-              repository: '$(imageRepository)'
-              command: 'buildAndPush'
-              Dockerfile: '$(Build.Repository.LocalPath)/$(dockerfileRelativePath)'
-              buildContext: '$(Build.Repository.LocalPath)'
-              tags: |
-                $(Build.BuildId)
-                latest
-                $(pomversion)
-          - task: PublishPipelineArtifact@1
-            displayName: 'Publish Atrifact manifests'
-            condition: and(succeeded(), eq(variables.isToDeploy, true))
-            inputs:
-              targetPath: '$(Build.Repository.LocalPath)/manifests'
-              artifact: 'manifests'
-              publishLocation: 'pipeline'
-
   - stage: Deploy
     displayName: Deploy stage
     dependsOn: Build
@@ -157,23 +138,6 @@ stages:
                       echo 'VERSION'
                       echo $VERSION
                     failOnStderr: true
-                - task: DownloadPipelineArtifact@2
-                  inputs:
-                    buildType: 'current'
-                    artifactName: 'manifests'
-                    targetPath: '$(Pipeline.Workspace)/manifests'              
-                - task: KubernetesManifest@0
-                  displayName: Deploy to Kubernetes cluster
-                  inputs:
-                    action: deploy
-                    manifests: |
-                      $(Pipeline.Workspace)/manifests/$(deployment).yml
-                      $(Pipeline.Workspace)/manifests/service.yml
-                    imagePullSecrets: |
-                      $(imagePullSecret)
-                    containers: |
-                      $(containerRegistry)/$(imageRepository):$(pomversion)
-
       - deployment: Deploy2
         displayName: Deploy UAT
         condition: eq(variables.isUAT, true)
