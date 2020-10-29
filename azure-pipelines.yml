@@ -75,6 +75,22 @@ stages:
             inputs:
               secureFile: 'settings.xml'
               retryCount: '2'
+          - task: Maven@3
+            inputs:
+              mavenPomFile: 'pom.xml'
+              goals: 'deploy'
+              options: '-B -s $(settingsxml.secureFilePath)'
+              publishJUnitResults: true
+              testResultsFiles: '**/surefire-reports/TEST-*.xml'
+              codeCoverageToolOption: 'JaCoCo'
+              codeCoverageClassFilter: '+:it.gov.pagopa.**,-:**.*Config,-:**.model.**,-:**.enums.**,-:**.*Constants,-:**.*Application,-:**.*Test,-:**.*Test.**'
+              javaHomeOption: 'JDKVersion'
+              jdkVersionOption: '1.8'
+              mavenVersionOption: 'Default'
+              mavenOptions: '-Xmx3072m'
+              mavenAuthenticateFeed: false
+              effectivePomSkip: true
+              sonarQubeRunAnalysis: false    
           - task: Bash@3
             displayName: Get POM version
             name: getpomversion
@@ -86,19 +102,34 @@ stages:
                 echo "##vso[task.setvariable variable=pomversion]$version"
                 echo "##vso[task.setvariable variable=outputpomversion;isOutput=true]$version"
               failOnStderr: true      
-          - task: Bash@3
+          - task: Docker@2
+            displayName: Build and push an image to container registry
+            condition: and(succeeded(), eq(variables.isToDeploy, true))
             inputs:
-              targetType: 'inline'
-              script: |
-                echo $POMVERSION
-              failOnStderr: true              
+              containerRegistry: '$(dockerRegistryServiceConnection)'
+              repository: '$(imageRepository)'
+              command: 'buildAndPush'
+              Dockerfile: '$(Build.Repository.LocalPath)/$(dockerfileRelativePath)'
+              buildContext: '$(Build.Repository.LocalPath)'
+              tags: |
+                $(Build.BuildId)
+                latest
+                $(pomversion)
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Atrifact manifests'
+            condition: and(succeeded(), eq(variables.isToDeploy, true))
+            inputs:
+              targetPath: '$(Build.Repository.LocalPath)/manifests'
+              artifact: 'manifests'
+              publishLocation: 'pipeline' 
+
   - stage: Deploy
     displayName: Deploy stage
     dependsOn: Build
     condition: and(succeeded(), eq(variables.isToDeploy, true))
     variables:
     # map the output variable from A into this job
-      varFromA: $[ stageDependencies.Build.Build.outputs['getpomversion.outputpomversion'] ]
+      pomversion: $[ stageDependencies.Build.Build.outputs['getpomversion.outputpomversion'] ]
     jobs:
       - deployment: Deploy1
         displayName: Deploy SIT
@@ -111,7 +142,23 @@ stages:
             deploy:
               steps:
                 - download: none
-                - script: echo $(varFromA)
+                - task: DownloadPipelineArtifact@2
+                  inputs:
+                    buildType: 'current'
+                    artifactName: 'manifests'
+                    targetPath: '$(Pipeline.Workspace)/manifests'              
+                - task: KubernetesManifest@0
+                  displayName: Deploy to Kubernetes cluster
+                  inputs:
+                    action: deploy
+                    manifests: |
+                      $(Pipeline.Workspace)/manifests/$(deployment).yml
+                      $(Pipeline.Workspace)/manifests/service.yml
+                    imagePullSecrets: |
+                      $(imagePullSecret)
+                    containers: |
+                      $(containerRegistry)/$(imageRepository):$(pomversion)
+
       - deployment: Deploy2
         displayName: Deploy UAT
         condition: eq(variables.isUAT, true)
@@ -139,6 +186,7 @@ stages:
                       $(Pipeline.Workspace)/manifests/service.yml
                     containers: '$(containerRegistry)/$(imageRepository):$(pomversion)'
                     imagePullSecrets: '$(imagePullSecret)'
+
       - deployment: Deploy3
         displayName: Deploy PROD
         condition: eq(variables.isPROD, true)
