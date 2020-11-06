@@ -87,7 +87,7 @@ stages:
 
   - stage: POM
     displayName: POM
-    condition: and(eq(variables.isToDeploy, true))
+    condition: eq(variables.isToDeploy, true)
     jobs:
       - job: POM
         displayName: POM
