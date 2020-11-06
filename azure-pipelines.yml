@@ -72,6 +72,12 @@ stages:
         pool:
           vmImage: $(vmImageNameDefault)
         steps:
+          - task: DownloadSecureFile@1
+            displayName: 'download settings.xml for Maven'
+            name: settingsxml
+            inputs:
+              secureFile: 'settings.xml'
+              retryCount: '2'  
           - task: Maven@3
             inputs:
               mavenPomFile: 'pom.xml'
