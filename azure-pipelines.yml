@@ -135,9 +135,6 @@ stages:
             inputs:
               secureFile: 'settings.xml'
               retryCount: '2'
-          - checkout: self
-            persistCredentials: true
-            clean: true    
           - task: Maven@3
             inputs:
               mavenPomFile: 'pom.xml'
@@ -173,6 +170,7 @@ stages:
 
       - deployment: Deploy
         displayName: Deploy
+        dependsOn: Build
         condition: and(succeeded(), eq(variables.isToDeploy, true), eq(variables.isSIT, true))
         pool:
           vmImage: $(vmImageNameDefault)
@@ -220,6 +218,7 @@ stages:
 
       - deployment: Deploy
         displayName: Deploy
+        dependsOn: Build
         pool:
           name: uat_agent_pool
         environment: 'uat'
@@ -266,6 +265,7 @@ stages:
 
       - deployment: Deploy
         displayName: Deploy
+        dependsOn: Build
         pool:
           name: prod-agent-pool
         environment: 'prod'
