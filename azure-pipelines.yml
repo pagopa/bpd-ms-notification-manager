@@ -149,7 +149,7 @@ stages:
               sonarQubeRunAnalysis: false         
           - task: Docker@2
             displayName: Build and push an image to container registry
-            condition: and(succeeded()))
+            condition: succeeded()
             inputs:
               containerRegistry: '$(dockerRegistryServiceConnection)'
               repository: '$(imageRepository)'
