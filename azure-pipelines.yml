@@ -64,7 +64,7 @@ variables:
 stages:
 
   - stage: Test
-    displayName: Test Stage
+    displayName: Test
     condition: and(eq(variables.isPullRequest, true), ne(variables.isSIT, true), ne(variables.isUAT, true), ne(variables.isPROD, true))
     jobs:
       - job: Test
@@ -86,11 +86,11 @@ stages:
               sonarQubeRunAnalysis: false
 
   - stage: POM
-    displayName: POM Stage
+    displayName: POM
     condition: and(eq(variables.isToDeploy, true))
     jobs:
       - job: POM
-        displayName: Get POM
+        displayName: POM
         pool:
           vmImage: $(vmImageNameDefault)
         steps:
@@ -112,13 +112,13 @@ stages:
               failOnStderr: true  
 
   - stage: SIT
-    displayName: SIT Stage
+    displayName: SIT
     dependsOn: POM
     variables:
       pomversion: $[ stageDependencies.POM.POM.outputs['getpomversion.outputpomversion'] ]
     jobs:
       - job: Build
-        displayName: SIT Build
+        displayName: Build
         pool:
           vmImage: $(vmImageNameDefault)
         steps:
@@ -162,7 +162,7 @@ stages:
               publishLocation: 'pipeline' 
 
       - deployment: Deploy
-        displayName: Deploy SIT
+        displayName: Deploy
         condition: and(succeeded(), eq(variables.isToDeploy, true), eq(variables.isSIT, true))
         pool:
           vmImage: $(vmImageNameDefault)
