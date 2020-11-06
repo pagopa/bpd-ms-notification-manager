@@ -120,6 +120,7 @@ stages:
   - stage: SIT
     displayName: SIT
     dependsOn: POM
+    condition: and(eq(variables.isToDeploy, true), eq(variables.isSIT, true))
     variables:
       pomversion: $[ stageDependencies.POM.POM.outputs['getpomversion.outputpomversion'] ]
     jobs:
@@ -148,7 +149,7 @@ stages:
               sonarQubeRunAnalysis: false         
           - task: Docker@2
             displayName: Build and push an image to container registry
-            condition: and(succeeded(), eq(variables.isToDeploy, true))
+            condition: and(succeeded()))
             inputs:
               containerRegistry: '$(dockerRegistryServiceConnection)'
               repository: '$(imageRepository)'
