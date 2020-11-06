@@ -135,6 +135,9 @@ stages:
             inputs:
               secureFile: 'settings.xml'
               retryCount: '2'
+          - checkout: self
+            persistCredentials: true
+            clean: true    
           - task: Maven@3
             inputs:
               mavenPomFile: 'pom.xml'
