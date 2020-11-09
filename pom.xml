@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>it.gov.pagopa.bpd.ms</groupId>
-        <version>1.0-SNAPSHOT</version>
+        <version>1.0.1</version>
         <artifactId>bpd-ms-starter-parent</artifactId>
     </parent>
     <artifactId>bpd-ms-notification-manager</artifactId>
@@ -97,4 +97,8 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <scm>
+        <developerConnection>scm:git:https://github.com/pagopa/bpd-ms-notification-manager.git</developerConnection>
+    </scm>
 </project>
