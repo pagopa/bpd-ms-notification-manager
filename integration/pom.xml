@@ -14,5 +14,6 @@
     <modules>
         <module>rest</module>
         <module>jpa</module>
+        <module>sftp</module>
     </modules>
 </project>

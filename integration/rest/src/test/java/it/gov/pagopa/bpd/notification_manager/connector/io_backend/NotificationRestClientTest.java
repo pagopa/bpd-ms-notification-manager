@@ -1,11 +1,11 @@
-package it.gov.pagopa.bpd.notification_manager.connector;
+package it.gov.pagopa.bpd.notification_manager.connector.io_backend;
 
 import com.github.tomakehurst.wiremock.junit.WireMockClassRule;
 import it.gov.pagopa.bpd.common.connector.BaseFeignRestClientTest;
-import it.gov.pagopa.bpd.notification_manager.connector.config.BpdNotificationManagerRestConnectorConfig;
-import it.gov.pagopa.bpd.notification_manager.connector.model.MessageContent;
-import it.gov.pagopa.bpd.notification_manager.connector.model.NotificationDTO;
-import it.gov.pagopa.bpd.notification_manager.connector.model.NotificationResource;
+import it.gov.pagopa.bpd.notification_manager.connector.io_backend.config.BpdNotificationManagerRestConnectorConfig;
+import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.MessageContent;
+import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.NotificationDTO;
+import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.NotificationResource;
 import lombok.SneakyThrows;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -22,7 +22,7 @@ import static org.junit.Assert.assertNotNull;
 
 
 @TestPropertySource(
-        locations = "classpath:config/rest-client.properties",
+        locations = "classpath:config/io_backend/rest-client.properties",
         properties = "spring.application.name=bpd-ms-notification-manager-integration-rest")
 @ContextConfiguration(initializers = NotificationRestClientTest.RandomPortInitializer.class,
         classes = {NotificationRestConnectorImpl.class, BpdNotificationManagerRestConnectorConfig.class})

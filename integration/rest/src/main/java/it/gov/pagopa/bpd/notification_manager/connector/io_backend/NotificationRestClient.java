@@ -1,10 +1,9 @@
-package it.gov.pagopa.bpd.notification_manager.connector;
+package it.gov.pagopa.bpd.notification_manager.connector.io_backend;
 
-import it.gov.pagopa.bpd.notification_manager.connector.model.NotificationDTO;
-import it.gov.pagopa.bpd.notification_manager.connector.model.NotificationResource;
+import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.NotificationDTO;
+import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.NotificationResource;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.MediaType;
-import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;

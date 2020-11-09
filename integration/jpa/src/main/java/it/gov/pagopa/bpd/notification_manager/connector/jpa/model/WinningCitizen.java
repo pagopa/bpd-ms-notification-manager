@@ -1,35 +1,64 @@
 package it.gov.pagopa.bpd.notification_manager.connector.jpa.model;
 
+import it.gov.pagopa.bpd.common.connector.jpa.model.BaseEntity;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.Table;
+import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Data
-public class WinningCitizen {
+@Table(name = "bpd_award_winner")
+public class WinningCitizen extends BaseEntity {
 
     @Id
-    @Column(name = "fiscal_code_out")
+    @Column(name = "id_n")
+    private Long id;
+
+    @Column(name = "cashback_n")
+    private BigDecimal cashback;
+
+    @Column(name = "fiscal_code_s")
     private String fiscalCode;
 
-    @Column(name = "payoff_instr_out")
+    @Column(name = "account_holder_cf_s")
+    private String accountHolderFiscalCode;
+
+    @Column(name = "payoff_instr_s")
     private String payoffInstr;
 
-    @Column(name = "aw_period_out")
+    @Column(name = "account_holder_name_s")
+    private String accountHolderName;
+
+    @Column(name = "account_holder_surname_s")
+    private String accountHolderSurname;
+
+    @Column(name = "check_instr_status_s")
+    private String checkInstrStatus;
+
+    @Column(name = "award_period_id_n")
     private Long awardPeriodId;
 
-    @Column(name = "cashback_out")
-    private Long cashback;
-
-    @Column(name = "amount_out")
-    private Long amount;
-
-    @Column(name = "aw_period_start_out")
+    @Column(name = "aw_period_start_d")
     private LocalDate awardPeriodStart;
 
-    @Column(name = "aw_period_end_out")
+    @Column(name = "aw_period_end_d")
     private LocalDate awardPeriodEnd;
+
+    @Column(name = "amount_n")
+    private BigDecimal amount;
+
+    @Column(name = "typology_s")
+    private String typology;
+
+    @Column(name = "jackpot_n")
+    private BigDecimal jackpot;
+
 }
