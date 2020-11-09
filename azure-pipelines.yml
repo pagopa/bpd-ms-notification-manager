@@ -65,7 +65,7 @@ stages:
 
   - stage: Test
     displayName: Test
-    condition: and(eq(variables.isPullRequest, true), ne(variables.isSIT, true), ne(variables.isUAT, true), ne(variables.isPROD, true))
+    condition: or(eq(variables.isPullRequest, true), and(ne(variables.isSIT, true), ne(variables.isUAT, true), ne(variables.isPROD, true)))
     jobs:
       - job: Test
         displayName: Test
@@ -139,7 +139,7 @@ stages:
             inputs:
               mavenPomFile: 'pom.xml'
               goals: 'deploy'
-              options: '-B -s $(settingsxml.secureFilePath)'
+              options: '-B -s $(settingsxml.secureFilePath) -DskipTests=true'
               javaHomeOption: 'JDKVersion'
               jdkVersionOption: '1.8'
               mavenVersionOption: 'Default'
@@ -170,6 +170,7 @@ stages:
 
       - deployment: Deploy
         displayName: Deploy
+        dependsOn: Build
         condition: and(succeeded(), eq(variables.isToDeploy, true), eq(variables.isSIT, true))
         pool:
           vmImage: $(vmImageNameDefault)
@@ -217,6 +218,7 @@ stages:
 
       - deployment: Deploy
         displayName: Deploy
+        dependsOn: Build
         pool:
           name: uat_agent_pool
         environment: 'uat'
@@ -263,6 +265,7 @@ stages:
 
       - deployment: Deploy
         displayName: Deploy
+        dependsOn: Build
         pool:
           name: prod-agent-pool
         environment: 'prod'
