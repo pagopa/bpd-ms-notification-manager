@@ -35,34 +35,34 @@
             <dependency>
                 <groupId>it.gov.pagopa.bpd.commons.api</groupId>
                 <artifactId>bpd-commons-api-rest</artifactId>
-                <version>1.0-SNAPSHOT</version>
+                <version>1.0.2</version>
             </dependency>
             <dependency>
                 <groupId>it.gov.pagopa.bpd.commons</groupId>
                 <artifactId>bpd-commons-core</artifactId>
-                <version>1.0-SNAPSHOT</version>
+                <version>1.0.2</version>
             </dependency>
             <dependency>
                 <groupId>it.gov.pagopa.bpd.commons.integration</groupId>
                 <artifactId>bpd-commons-integration-jpa</artifactId>
-                <version>1.0-SNAPSHOT</version>
+                <version>1.0.2</version>
             </dependency>
             <dependency>
                 <groupId>it.gov.pagopa.bpd.commons.integration</groupId>
                 <artifactId>bpd-commons-integration-jpa</artifactId>
-                <version>1.0-SNAPSHOT</version>
+                <version>1.0.2</version>
                 <type>test-jar</type>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>it.gov.pagopa.bpd.commons.integration</groupId>
                 <artifactId>bpd-commons-integration-rest</artifactId>
-                <version>1.0-SNAPSHOT</version>
+                <version>1.0.2</version>
             </dependency>
             <dependency>
                 <groupId>it.gov.pagopa.bpd.commons.integration</groupId>
                 <artifactId>bpd-commons-integration-rest</artifactId>
-                <version>1.0-SNAPSHOT</version>
+                <version>1.0.2</version>
                 <type>test-jar</type>
             </dependency>
         </dependencies>
