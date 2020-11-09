@@ -70,9 +70,9 @@ class NotificationServiceImpl extends BaseService implements NotificationService
             for (String citizenCf : citizensFC) {
                 NotificationDTO dto = notificationDtoMapper.NotificationDtoMapper(
                         citizenCf, timeToLive, subject, markdown);
-                NotificationResource resouce = notificationRestConnector.notify(dto);
+                NotificationResource resource = notificationRestConnector.notify(dto);
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Notified citizen, notification id: " + resouce.getId());
+                    logger.debug("Notified citizen, notification id: " + resource.getId());
                 }
             }
         } catch (Exception e) {
