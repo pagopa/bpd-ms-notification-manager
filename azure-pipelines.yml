@@ -134,7 +134,7 @@ stages:
             name: settingsxml
             inputs:
               secureFile: 'settings.xml'
-              retryCount: '2'
+              retryCount: '2'  
           - task: Maven@3
             inputs:
               mavenPomFile: 'pom.xml'
