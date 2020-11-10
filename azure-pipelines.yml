@@ -44,7 +44,7 @@ variables:
   isPullValidForSIT: $[and(eq(variables.isPullRequest,true), eq(variables['System.PullRequest.TargetBranch'],'release/st'), ne(variables['System.PullRequest.SourceBranch'],'release/uat'),ne(variables['System.PullRequest.SourceBranch'],'release/prod'))]
   isPullValidForUAT: $[and(eq(variables.isPullRequest,true), eq(variables['System.PullRequest.TargetBranch'],'release/uat'), ne(variables['System.PullRequest.SourceBranch'],'release/prod'))]
   isPullValidForProd: $[and(eq(variables.isPullRequest,true), eq(variables['System.PullRequest.TargetBranch'],'release/prod'), ne(variables['System.PullRequest.SourceBranch'],'release/st'),ne(variables['System.PullRequest.SourceBranch'],'release/uat'))]
-  isToDeploy: $[or(eq(variables.isPullValidForSIT,true),eq(variables.isPullValidForUAT,true),eq(variables.isPullValidForProd,true), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release'))]
+  isToDeploy: $[or(eq(variables.isPullValidForSIT,true),eq(variables.isPullValidForUAT,true),eq(variables.isPullValidForProd,true), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release')))]
 
   ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/st') }}:
     dockerRegistryServiceConnection: 'cstarregistry-connection'
