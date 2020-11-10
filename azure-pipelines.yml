@@ -130,16 +130,18 @@ stages:
           vmImage: $(vmImageNameDefault)
         steps:
           - task: DownloadSecureFile@1
-            displayName: 'download settings.xml for Maven'
-            name: settingsxml
             inputs:
-              secureFile: 'settings.xml'
-              retryCount: '2'
+              secureFile: mavenSettings
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: $(Agent.TempDirectory)
+              Contents: mavenSettings
+              TargetFolder: $(Build.SourcesDirectory)
           - task: Maven@3
             inputs:
               mavenPomFile: 'pom.xml'
               goals: 'release:perform'
-              options: '-B -s $(settingsxml.secureFilePath) -DskipTests=true'
+              options: '-B --settings $(Agent.TempDirectory)/mavenSettings -DskipTests=true'
               javaHomeOption: 'JDKVersion'
               jdkVersionOption: '1.8'
               mavenVersionOption: 'Default'
