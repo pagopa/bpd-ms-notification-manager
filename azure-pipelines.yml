@@ -239,6 +239,7 @@ stages:
               secureFile: 'settings.xml'
               retryCount: '2'  
           - task: Maven@3
+            condition: ne(variables['System.PullRequest.SourceBranch'],'release/st')
             inputs:
               mavenPomFile: 'pom.xml'
               goals: 'deploy'
