@@ -41,7 +41,7 @@ variables:
   isUAT: $[eq(variables['Build.SourceBranch'], 'refs/heads/release/uat')]
   isPROD: $[eq(variables['Build.SourceBranch'], 'refs/heads/master')]
   isPullRequest: $[eq(variables['Build.Reason'], 'PullRequest')]
-  isPullValidForSIT: $[and(eq(variables.isPullRequest,true), eq(variables['System.PullRequest.TargetBranch'],'release/sit'), ne(variables['System.PullRequest.SourceBranch'],'release/uat'),ne(variables['System.PullRequest.SourceBranch'],'release/prod'))]
+  isPullValidForSIT: $[and(eq(variables.isPullRequest,true), eq(variables['System.PullRequest.TargetBranch'],'release/st'), ne(variables['System.PullRequest.SourceBranch'],'release/uat'),ne(variables['System.PullRequest.SourceBranch'],'release/prod'))]
   isPullValidForUAT: $[and(eq(variables.isPullRequest,true), eq(variables['System.PullRequest.TargetBranch'],'release/uat'), ne(variables['System.PullRequest.SourceBranch'],'release/prod'))]
   isPullValidForProd: $[and(eq(variables.isPullRequest,true), eq(variables['System.PullRequest.TargetBranch'],'release/prod'), ne(variables['System.PullRequest.SourceBranch'],'release/st'),ne(variables['System.PullRequest.SourceBranch'],'release/uat'))]
   isToDeploy: $[and(or(eq(variables.isPullValidForSIT,true),eq(variables.isPullValidForUAT,true),eq(variables.isPullValidForProd,true),ne(variables['Build.Reason'], 'PullRequest')), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release')))]
