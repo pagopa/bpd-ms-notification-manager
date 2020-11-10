@@ -221,7 +221,7 @@ stages:
           - task: Maven@3
             inputs:
               mavenPomFile: 'pom.xml'
-              goals: 'build'
+              goals: 'compile'
               options: '-B -s $(settingsxml.secureFilePath) -DskipTests=true'
               javaHomeOption: 'JDKVersion'
               jdkVersionOption: '1.8'
