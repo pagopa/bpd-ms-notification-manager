@@ -138,8 +138,8 @@ stages:
           - task: Maven@3
             inputs:
               mavenPomFile: 'pom.xml'
-              goals: 'deploy'
-              options: '-B -s $(settingsxml.secureFilePath) -DskipTests=true release:perform'
+              goals: 'release:perform'
+              options: '-B -s $(settingsxml.secureFilePath) -DskipTests=true'
               javaHomeOption: 'JDKVersion'
               jdkVersionOption: '1.8'
               mavenVersionOption: 'Default'
