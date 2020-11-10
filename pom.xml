@@ -83,7 +83,10 @@
     </dependencies>
 
     <scm>
+        <url>scm:git:https://github.com/pagopa/bpd-ms-notification-manager.git</url>
+        <connection>scm:git:https://github.com/pagopa/bpd-ms-notification-manager.git</connection>
         <developerConnection>scm:git:https://github.com/pagopa/bpd-ms-notification-manager.git</developerConnection>
-      <tag>1.0.0-rc1</tag>
+        <tag>1.0.0-rc1</tag>
   </scm>
+
 </project>
