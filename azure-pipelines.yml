@@ -42,7 +42,7 @@ variables:
   isUAT: $[eq(variables['Build.SourceBranch'], 'refs/heads/release/uat')]
   isPROD: $[eq(variables['Build.SourceBranch'], 'refs/heads/master')]
   isPullRequest: $[eq(variables['Build.Reason'], 'PullRequest')]
-  isPullValidForProd: $[and(eq(variables.isPullRequest,true), eq(variables['System.PullRequest.TargetBranch','release/prod']), ne(variables['System.PullRequest.SourceBranch','release/st']),ne(variables['System.PullRequest.SourceBranch','release/uat']))]
+  isPullValidForProd: $[and(eq(variables.isPullRequest,true), eq(variables['System.PullRequest.TargetBranch'],'release/prod'), ne(variables['System.PullRequest.SourceBranch'],'release/st'),ne(variables['System.PullRequest.SourceBranch'],'release/uat'))]
 
   ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/st') }}:
     dockerRegistryServiceConnection: 'cstarregistry-connection'
