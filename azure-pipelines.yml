@@ -42,6 +42,7 @@ variables:
   isUAT: $[eq(variables['Build.SourceBranch'], 'refs/heads/release/uat')]
   isPROD: $[eq(variables['Build.SourceBranch'], 'refs/heads/master')]
   isPullRequest: $[eq(variables['Build.Reason'], 'PullRequest')]
+  isPullValidForProd: $[and(eq(variables.isPullRequest,true), eq(variables['System.PullRequest.TargetBranch'],'release/prod'), ne(variables['System.PullRequest.SourceBranch'],'release/st'),ne(variables['System.PullRequest.SourceBranch'],'release/uat'))]
 
   ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/st') }}:
     dockerRegistryServiceConnection: 'cstarregistry-connection'
@@ -138,8 +139,8 @@ stages:
           - task: Maven@3
             inputs:
               mavenPomFile: 'pom.xml'
-              goals: 'release:perform'
-              options: '-B -s $(settingsxml.secureFilePath) -DlocalCheckout=true -DskipTests=true'
+              goals: 'deploy'
+              options: '-B -s $(settingsxml.secureFilePath) -DskipTests=true'
               javaHomeOption: 'JDKVersion'
               jdkVersionOption: '1.8'
               mavenVersionOption: 'Default'
@@ -243,6 +244,57 @@ stages:
                       $(Pipeline.Workspace)/manifests/service.yml
                     containers: '$(containerRegistry)/$(imageRepository):$(pomversion)'
                     imagePullSecrets: '$(imagePullSecret)'                     
+
+  - stage: PROD_PR
+    displayName: PROD_PR
+    dependsOn: POM
+    condition: and(eq(variables.isPullValidForProd, true), eq(variables.isPROD, true))
+    variables:
+      pomversion: $[ stageDependencies.POM.POM.outputs['getpomversion.outputpomversion'] ]
+    jobs:
+      - job: Build
+        displayName: Build
+        pool:
+          vmImage: $(vmImageNameDefault)
+        steps:
+          - task: DownloadSecureFile@1
+            displayName: 'download settings.xml for Maven'
+            name: settingsxml
+            inputs:
+              secureFile: 'settings.xml'
+              retryCount: '2'  
+          - task: Maven@3
+            inputs:
+              mavenPomFile: 'pom.xml'
+              goals: 'deploy'
+              options: '-B -s $(settingsxml.secureFilePath) -DskipTests=true'
+              javaHomeOption: 'JDKVersion'
+              jdkVersionOption: '1.8'
+              mavenVersionOption: 'Default'
+              mavenOptions: '-Xmx3072m'
+              mavenAuthenticateFeed: false
+              effectivePomSkip: true
+              sonarQubeRunAnalysis: false         
+          - task: Docker@2
+            displayName: Build and push an image to container registry
+            condition: succeeded()
+            inputs:
+              containerRegistry: '$(dockerRegistryServiceConnection)'
+              repository: '$(imageRepository)'
+              command: 'buildAndPush'
+              Dockerfile: '$(Build.Repository.LocalPath)/$(dockerfileRelativePath)'
+              buildContext: '$(Build.Repository.LocalPath)'
+              tags: |
+                $(Build.BuildId)
+                latest
+                $(pomversion)
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Atrifact manifests'
+            condition: and(succeeded(), eq(variables.isToDeploy, true))
+            inputs:
+              targetPath: '$(Build.Repository.LocalPath)/manifests'
+              artifact: 'manifests'
+              publishLocation: 'pipeline' 
 
   - stage: PROD
     displayName: PROD
