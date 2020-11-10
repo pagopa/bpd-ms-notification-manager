@@ -68,7 +68,7 @@ stages:
 
   - stage: Test
     displayName: Test
-    condition: and(ne(variables.isPullRequest, true), ne(variables.isSIT, true), ne(variables.isUAT, true), ne(variables.isPROD, true)))
+    condition: and(ne(variables.isPullRequest, true), ne(variables.isSIT, true), ne(variables.isUAT, true), ne(variables.isPROD, true))
     jobs:
       - job: Test
         displayName: Test
