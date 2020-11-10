@@ -123,7 +123,7 @@ stages:
   - stage: SIT_PR
     displayName: SIT_PR
     dependsOn: POM
-    condition: and(eq(variables.isPullValidForSit, true))
+    condition: eq(variables.isPullValidForSit, true)
     variables:
       pomversion: $[ stageDependencies.POM.POM.outputs['getpomversion.outputpomversion'] ]
     jobs:
@@ -223,7 +223,7 @@ stages:
   - stage: UAT_PR
     displayName: UAT_PR
     dependsOn: POM
-    condition: and(eq(variables.isPullValidForUat, true))
+    condition: eq(variables.isPullValidForUat, true)
     variables:
       pomversion: $[ stageDependencies.POM.POM.outputs['getpomversion.outputpomversion'] ]
     jobs:
@@ -321,7 +321,7 @@ stages:
   - stage: PROD_PR
     displayName: PROD_PR
     dependsOn: POM
-    condition: and(eq(variables.isPullValidForProd, true))
+    condition: eq(variables.isPullValidForProd, true)
     variables:
       pomversion: $[ stageDependencies.POM.POM.outputs['getpomversion.outputpomversion'] ]
     jobs:
