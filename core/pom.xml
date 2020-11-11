@@ -20,6 +20,10 @@
             <groupId>it.gov.pagopa.bpd.ms.notification_manager.integration</groupId>
             <artifactId>bpd-ms-notification-manager-integration-rest</artifactId>
         </dependency>
+        <dependency>
+            <groupId>it.gov.pagopa.bpd.ms.notification_manager.integration</groupId>
+            <artifactId>bpd-ms-notification-manager-integration-sftp</artifactId>
+        </dependency>
     </dependencies>
 
 </project>

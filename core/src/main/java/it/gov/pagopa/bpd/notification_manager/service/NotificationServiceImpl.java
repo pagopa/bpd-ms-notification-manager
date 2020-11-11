@@ -2,7 +2,7 @@ package it.gov.pagopa.bpd.notification_manager.service;
 
 
 import eu.sia.meda.service.BaseService;
-import io.micrometer.core.instrument.util.TimeUtils;
+import it.gov.pagopa.bpd.notification_manager.connector.WinnersSftpConnector;
 import it.gov.pagopa.bpd.notification_manager.connector.award_period.AwardPeriodRestClient;
 import it.gov.pagopa.bpd.notification_manager.connector.award_period.model.AwardPeriod;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.NotificationRestConnector;
@@ -12,6 +12,7 @@ import it.gov.pagopa.bpd.notification_manager.connector.jpa.CitizenDAO;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.WinningCitizen;
 import it.gov.pagopa.bpd.notification_manager.mapper.NotificationDtoMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.joda.time.format.DateTimeFormat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -19,8 +20,11 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.text.DecimalFormat;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.Period;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,33 +36,45 @@ import java.util.List;
 class NotificationServiceImpl extends BaseService implements NotificationService {
 
     private final CitizenDAO citizenDAO;
-    //    private final AwardWinnerDAO awardWinnerDAO;
     private final NotificationDtoMapper notificationDtoMapper;
     private final NotificationRestConnector notificationRestConnector;
     private final AwardPeriodRestClient awardPeriodRestClient;
+    private final WinnersSftpConnector winnersSftpConnector;
     private final String outputFilePath;
     private final Long timeToLive;
     private final String subject;
     private final String markdown;
-    private static String DELIMITER = ";";
-    private final int maxSize = 3;
+    private final String DELIMITER;
+    private final Long maxRow;
+    private final String serviceName;
+    private final String fileType;
 
     @Autowired
     NotificationServiceImpl(
             CitizenDAO citizenDAO, NotificationDtoMapper notificationDtoMapper,
             NotificationRestConnector notificationRestConnector,
-            AwardPeriodRestClient awardPeriodRestClient, @Value("${core.NotificationService.updateRankingAndFindWinners.outputFilePath}") String outputFilePath,
+            AwardPeriodRestClient awardPeriodRestClient, WinnersSftpConnector winnersSftpConnector,
+            @Value("${core.NotificationService.updateRankingAndFindWinners.outputFilePath}") String outputFilePath,
             @Value("${core.NotificationService.notifyUnsetPayoffInstr.ttl}") Long timeToLive,
             @Value("${core.NotificationService.notifyUnsetPayoffInstr.subject}") String subject,
-            @Value("${core.NotificationService.notifyUnsetPayoffInstr.markdown}") String markdown) {
+            @Value("${core.NotificationService.notifyUnsetPayoffInstr.markdown}") String markdown,
+            @Value("${core.NotificationService.notifyWinners.delimiter}") String delimiter,
+            @Value("${core.NotificationService.notifyWinners.maxRow}") Long maxRow,
+            @Value("${core.NotificationService.notifyWinners.serviceName}") String serviceName,
+            @Value("${core.NotificationService.notifyWinners.fileType}") String fileType) {
         this.citizenDAO = citizenDAO;
         this.notificationDtoMapper = notificationDtoMapper;
         this.notificationRestConnector = notificationRestConnector;
         this.awardPeriodRestClient = awardPeriodRestClient;
+        this.winnersSftpConnector = winnersSftpConnector;
         this.outputFilePath = outputFilePath;
         this.timeToLive = timeToLive;
         this.subject = subject;
         this.markdown = markdown;
+        DELIMITER = delimiter;
+        this.maxRow = maxRow;
+        this.serviceName = serviceName;
+        this.fileType = fileType;
     }
 
 
@@ -92,29 +108,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     @Scheduled(cron = "${core.NotificationService.updateRankingAndFindWinners.scheduler}")
     public void findWinners() {
         try {
-            //TODO rimuovere commento
-//            List<AwardPeriod> activePeriods = awardPeriodRestClient.findActiveAwardPeriods();
-            //TODO rimuovere blocco --->
-            List<AwardPeriod> activePeriods = new ArrayList<AwardPeriod>();
-            AwardPeriod awp1 = new AwardPeriod();
-            awp1.setAwardPeriodId(2L);
-            awp1.setEndDate(LocalDate.now().minus(Period.ofDays(15)));
-            awp1.setGracePeriod(15L);
-            awp1.setStartDate(LocalDate.now().minus(Period.ofDays(50)));
-            activePeriods.add(awp1);
-            AwardPeriod awp2 = new AwardPeriod();
-            awp2.setAwardPeriodId(1L);
-            awp2.setEndDate(LocalDate.now().minus(Period.ofDays(5)));
-            awp2.setGracePeriod(15L);
-            awp2.setStartDate(LocalDate.now().minus(Period.ofDays(40)));
-            activePeriods.add(awp2);
-            AwardPeriod awp3 = new AwardPeriod();
-            awp3.setAwardPeriodId(3L);
-            awp3.setEndDate(LocalDate.now().plus(Period.ofDays(5)));
-            awp3.setGracePeriod(15L);
-            awp3.setStartDate(LocalDate.now().minus(Period.ofDays(15)));
-            activePeriods.add(awp3);
-            // <---
+            List<AwardPeriod> activePeriods = awardPeriodRestClient.findActiveAwardPeriods();
             Long endingPeriodId = null;
             for (AwardPeriod activePeriod : activePeriods) {
                 if (activePeriod.getEndDate().plus(Period.ofDays(activePeriod.getGracePeriod().intValue()))
@@ -164,25 +158,35 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                                 winnerForCSV.getCheckInstrStatus() + DELIMITER +
                                 winnerForCSV.getAccountHolderFiscalCode();
                         dataLines.add(sb);
-                        if (dataLines.size() == maxSize || n == winnersForCSV.size()) {
+                        if (dataLines.size() == maxRow || n == winnersForCSV.size()) {
                             m++;
-                            File csvOutputFile = new File(fileName + String.valueOf(m)
-                                    + "_" + String.valueOf((int) Math.ceil((double) winnersForCSV.size() / maxSize))
+                            DecimalFormat twoDigits = new DecimalFormat("00");
+                            String currentFileNumber = twoDigits.format(m);
+                            String totalFileNumber = twoDigits.format((int) Math.ceil((double) winnersForCSV.size() / maxRow));
+//                            TODO definire fileType
+                            File csvOutputFile = new File(serviceName + "."
+                                    + fileType + "."
+                                    + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + "."
+                                    + LocalTime.now().format(DateTimeFormatter.ofPattern("hhmmss"))+ "."
+                                    + currentFileNumber + "_" + totalFileNumber
                                     + ".csv");
-                            try (PrintWriter pw = new PrintWriter(csvOutputFile)) {
-                                dataLines.forEach(pw::println);
-                            }
+//                            try (PrintWriter pw = new PrintWriter(csvOutputFile)) {
+//                                dataLines.forEach(pw::println);
+//                            }
+
+//                            TODO cifrare csv e inviare a sftp (decommentare)
+//                            winnersSftpConnector.sendFile(csvOutputFile);
                             dataLines.clear();
                         }
                     }
                 }
             }
-            //TODO: Send results through SFTP channel
         } catch (Exception e) {
             if (logger.isErrorEnabled()) {
                 logger.error(e.getMessage(), e);
             }
         }
     }
+
 }
 
