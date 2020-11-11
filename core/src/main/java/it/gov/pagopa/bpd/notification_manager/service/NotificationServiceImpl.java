@@ -140,7 +140,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                                         winnerForCSV.getAwardPeriodStart().toString() +
                                         " al " + winnerForCSV.getAwardPeriodEnd().toString() +
                                         " - " + winnerForCSV.getFiscalCode());
-//                    TODO definire accountHolder
+//                        TODO definire accountHolder
                         String accountHolder = "";
                         String sb = winnerForCSV.getId().toString() + DELIMITER +
                                 winnerForCSV.getAccountHolderFiscalCode() + DELIMITER +
@@ -170,6 +170,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                                     + LocalTime.now().format(DateTimeFormatter.ofPattern("hhmmss"))+ "."
                                     + currentFileNumber + "_" + totalFileNumber
                                     + ".csv");
+//                            TODO rimuovere commento per produrre il csv
 //                            try (PrintWriter pw = new PrintWriter(csvOutputFile)) {
 //                                dataLines.forEach(pw::println);
 //                            }

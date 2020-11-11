@@ -136,6 +136,7 @@ public class NotificationServiceImplTest {
     public void testFindWinners(){
 
         notificationService.findWinners();
+//        Todo Rimuovere commento
 //        verify(winnersSftpConnectorMock, only()).sendFile(Mockito.any(File.class));
         verify(awardPeriodRestClientMock, only()).findActiveAwardPeriods();
 
