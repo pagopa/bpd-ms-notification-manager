@@ -1,13 +1,8 @@
 package it.gov.pagopa.bpd.notification_manager.mapper;
 
-import it.gov.pagopa.bpd.notification_manager.connector.model.ContentPaymentData;
-import it.gov.pagopa.bpd.notification_manager.connector.model.MessageContent;
-import it.gov.pagopa.bpd.notification_manager.connector.model.NotificationDTO;
+import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.MessageContent;
+import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.NotificationDTO;
 import org.springframework.stereotype.Service;
-
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 
 /**
  * Mapper to create NotificationDTO
