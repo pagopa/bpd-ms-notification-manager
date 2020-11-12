@@ -1,4 +1,4 @@
-package it.gov.pagopa.bpd.notification_manager.connector.model;
+package it.gov.pagopa.bpd.notification_manager.connector.io_backend.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
