@@ -82,6 +82,9 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     @Scheduled(cron = "${core.NotificationService.notifyUnsetPayoffInstr.scheduler}")
     public void notifyUnsetPayoffInstr() {
         try {
+            if (logger.isInfoEnabled()) {
+                logger.info("NotificationManagerServiceImpl.notifyUnsetPayoffInstr");
+            }
             List<String> citizensFC = citizenDAO.findFiscalCodesWithUnsetPayoffInstr();
             for (String citizenCf : citizensFC) {
                 NotificationDTO dto = notificationDtoMapper.NotificationDtoMapper(
@@ -101,13 +104,20 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     @Override
     @Scheduled(cron = "${core.NotificationService.updateRankingAndFindWinners.scheduler}")
     public void updateRankingAndWinners() {
+        if (logger.isInfoEnabled()) {
+            logger.info("NotificationManagerServiceImpl.updateRankingAndWinners");
+            logger.info("Executing procedure: updateRankingAndWinners");
+        }
         citizenDAO.updateRankingAndWinners();
     }
 
     @Override
-    @Scheduled(cron = "${core.NotificationService.updateRankingAndFindWinners.scheduler}")
+    @Scheduled(cron = "${core.NotificationService.findWinners.scheduler}")
     public void findWinners() {
         try {
+            if (logger.isInfoEnabled()) {
+                logger.info("NotificationManagerServiceImpl.findWinners");
+            }
             List<AwardPeriod> activePeriods = awardPeriodRestClient.findActiveAwardPeriods();
             Long endingPeriodId = null;
             for (AwardPeriod activePeriod : activePeriods) {
