@@ -1,0 +1,45 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPathPattern": "/bpd/award-periods/actives"
+  },
+  "response": {
+    "status": "200",
+    "jsonBody": [
+      {
+        "awardPeriodId": "1",
+        "startDate": "",
+        "endDate": "",
+        "minTransactionNumber": "",
+        "maxAmount": "",
+        "minPosition": "",
+        "maxTransactionCashback": "",
+        "maxPeriodCashback": "",
+        "cashbackPercentage": "",
+        "gracePeriod": "",
+        "status": "",
+        "maxTransactionEvaluated": ""
+      },
+      {
+        "awardPeriodId": "2",
+        "startDate": "",
+        "endDate": "",
+        "minTransactionNumber": "",
+        "maxAmount": "",
+        "minPosition": "",
+        "maxTransactionCashback": "",
+        "maxPeriodCashback": "",
+        "cashbackPercentage": "",
+        "gracePeriod": "",
+        "status": "",
+        "maxTransactionEvaluated": ""
+      }
+    ],
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "transformers": [
+      "response-template"
+    ]
+  }
+}

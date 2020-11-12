@@ -1,7 +1,7 @@
 package it.gov.pagopa.bpd.notification_manager.controller;
 
 import eu.sia.meda.core.controller.StatelessController;
-import it.gov.pagopa.bpd.notification_manager.connector.NotificationRestClient;
+import it.gov.pagopa.bpd.notification_manager.connector.io_backend.NotificationRestClient;
 import it.gov.pagopa.bpd.notification_manager.service.NotificationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +25,8 @@ class BpdNotificationManagerControllerImpl extends StatelessController implement
     @Override
     public void update() throws IOException {
 
-        notificationService.updateRankingAndFindWinners();
+        notificationService.updateRankingAndWinners();
+        notificationService.findWinners();
 //        notificationRestClient.notify();
 
     }
