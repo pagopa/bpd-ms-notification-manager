@@ -183,6 +183,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
 //                        TODO definire accountHolder
                         String accountHolder = "";
                         String sb = winnerForCSV.getId().toString() + DELIMITER +
+//                                TODO codice fiscale del titolare del conto o del vincitore?''
                                 winnerForCSV.getAccountHolderFiscalCode() + DELIMITER +
                                 winnerForCSV.getPayoffInstr() + DELIMITER +
                                 winnerForCSV.getAccountHolderName() + DELIMITER +
@@ -208,7 +209,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                                     + serviceName + "."
                                     + authorityType + "."
                                     + fileType + "."
-                                    + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + "."
+                                    + LocalDate.now().format(DateTimeFormatter.ofPattern("ddMMyyyy")) + "."
                                     + LocalTime.now().format(DateTimeFormatter.ofPattern("HHmmss")) + "."
                                     + currentFileNumber + "_" + totalFileNumber + "."
                                     + dataLines.size()
@@ -225,8 +226,8 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                                     EncryptUtil.readPublicKey(publicKeyIS),
                                     false, true);
 
-//                            TODO inviare a sftp (decommentare)
-//                            winnersSftpConnector.sendFile(csvOutputFile);
+                            File csvPgpFile = new File(csvOutputFile.getAbsolutePath().concat(".pgp"));
+                            winnersSftpConnector.sendFile(csvPgpFile);
                             dataLines.clear();
                         }
                     }
