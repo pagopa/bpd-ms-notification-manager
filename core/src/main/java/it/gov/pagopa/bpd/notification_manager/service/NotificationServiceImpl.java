@@ -125,27 +125,6 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                 logger.info("NotificationManagerServiceImpl.findWinners");
             }
             List<AwardPeriod> activePeriods = awardPeriodRestClient.findActiveAwardPeriods();
-            //TODO rimuovere blocco --->
-//            List<AwardPeriod> activePeriods = new ArrayList<AwardPeriod>();
-//            AwardPeriod awp1 = new AwardPeriod();
-//            awp1.setAwardPeriodId(2L);
-//            awp1.setEndDate(LocalDate.now().minus(Period.ofDays(15)));
-//            awp1.setGracePeriod(15L);
-//            awp1.setStartDate(LocalDate.now().minus(Period.ofDays(50)));
-//            activePeriods.add(awp1);
-//            AwardPeriod awp2 = new AwardPeriod();
-//            awp2.setAwardPeriodId(1L);
-//            awp2.setEndDate(LocalDate.now().minus(Period.ofDays(5)));
-//            awp2.setGracePeriod(15L);
-//            awp2.setStartDate(LocalDate.now().minus(Period.ofDays(40)));
-//            activePeriods.add(awp2);
-//            AwardPeriod awp3 = new AwardPeriod();
-//            awp3.setAwardPeriodId(3L);
-//            awp3.setEndDate(LocalDate.now().plus(Period.ofDays(5)));
-//            awp3.setGracePeriod(15L);
-//            awp3.setStartDate(LocalDate.now().minus(Period.ofDays(15)));
-//            activePeriods.add(awp3);
-            // <---
 
 //            Ricerca dell'award period in conclusione
             Long endingPeriodId = null;
@@ -172,6 +151,11 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                     int m = 0;
                     int n = 0;
                     Path tempDir = Files.createTempDirectory("csv_directory");
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("NotificationServiceImpl.findWinners");
+                        logger.debug("temporaryDirectoryPath = " + tempDir.toAbsolutePath().toString());
+                    }
+                    logger.debug(tempDir.toAbsolutePath().toString());
 
 //                    Viene creata una riga nel csv per ogni vincitore
                     for (WinningCitizen winnerForCSV : winnersForCSV) {
