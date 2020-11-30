@@ -10,16 +10,17 @@ import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.Notific
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.NotificationResource;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.CitizenDAO;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.WinningCitizen;
+import it.gov.pagopa.bpd.notification_manager.encryption.EncryptUtil;
 import it.gov.pagopa.bpd.notification_manager.mapper.NotificationDtoMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.joda.time.format.DateTimeFormat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.io.PrintWriter;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -40,41 +41,46 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     private final NotificationRestConnector notificationRestConnector;
     private final AwardPeriodRestClient awardPeriodRestClient;
     private final WinnersSftpConnector winnersSftpConnector;
-    private final String outputFilePath;
     private final Long timeToLive;
     private final String subject;
     private final String markdown;
     private final String DELIMITER;
     private final Long maxRow;
     private final String serviceName;
+    private final String authorityType;
     private final String fileType;
+    private final String publicKey;
 
     @Autowired
     NotificationServiceImpl(
-            CitizenDAO citizenDAO, NotificationDtoMapper notificationDtoMapper,
+            CitizenDAO citizenDAO,
+            NotificationDtoMapper notificationDtoMapper,
             NotificationRestConnector notificationRestConnector,
-            AwardPeriodRestClient awardPeriodRestClient, WinnersSftpConnector winnersSftpConnector,
-            @Value("${core.NotificationService.updateRankingAndFindWinners.outputFilePath}") String outputFilePath,
+            AwardPeriodRestClient awardPeriodRestClient,
+            WinnersSftpConnector winnersSftpConnector,
             @Value("${core.NotificationService.notifyUnsetPayoffInstr.ttl}") Long timeToLive,
             @Value("${core.NotificationService.notifyUnsetPayoffInstr.subject}") String subject,
             @Value("${core.NotificationService.notifyUnsetPayoffInstr.markdown}") String markdown,
-            @Value("${core.NotificationService.notifyWinners.delimiter}") String delimiter,
-            @Value("${core.NotificationService.notifyWinners.maxRow}") Long maxRow,
-            @Value("${core.NotificationService.notifyWinners.serviceName}") String serviceName,
-            @Value("${core.NotificationService.notifyWinners.fileType}") String fileType) {
+            @Value("${core.NotificationService.findWinners.delimiter}") String delimiter,
+            @Value("${core.NotificationService.findWinners.maxRow}") Long maxRow,
+            @Value("${core.NotificationService.findWinners.serviceName}") String serviceName,
+            @Value("${core.NotificationService.findWinners.authorityType}") String authorityType,
+            @Value("${core.NotificationService.findWinners.fileType}") String fileType,
+            @Value("${core.NotificationService.findWinners.publicKey}") String publicKey) {
         this.citizenDAO = citizenDAO;
         this.notificationDtoMapper = notificationDtoMapper;
         this.notificationRestConnector = notificationRestConnector;
         this.awardPeriodRestClient = awardPeriodRestClient;
         this.winnersSftpConnector = winnersSftpConnector;
-        this.outputFilePath = outputFilePath;
         this.timeToLive = timeToLive;
         this.subject = subject;
         this.markdown = markdown;
         DELIMITER = delimiter;
         this.maxRow = maxRow;
         this.serviceName = serviceName;
+        this.authorityType = authorityType;
         this.fileType = fileType;
+        this.publicKey = publicKey;
     }
 
 
@@ -102,7 +108,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     }
 
     @Override
-    @Scheduled(cron = "${core.NotificationService.updateRankingAndFindWinners.scheduler}")
+    @Scheduled(cron = "${core.NotificationService.updateRankingAndWinners.scheduler}")
     public void updateRankingAndWinners() {
         if (logger.isInfoEnabled()) {
             logger.info("NotificationManagerServiceImpl.updateRankingAndWinners");
@@ -119,27 +125,43 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                 logger.info("NotificationManagerServiceImpl.findWinners");
             }
             List<AwardPeriod> activePeriods = awardPeriodRestClient.findActiveAwardPeriods();
+
+//            Ricerca dell'award period in conclusione
             Long endingPeriodId = null;
             for (AwardPeriod activePeriod : activePeriods) {
-                if (activePeriod.getEndDate().plus(Period.ofDays(activePeriod.getGracePeriod().intValue()))
-                        .equals(LocalDate.now())) {
+                if (LocalDate.now().equals(activePeriod.getEndDate()
+                        .plus(Period.ofDays(activePeriod.getGracePeriod().intValue())))) {
                     endingPeriodId = activePeriod.getAwardPeriodId();
                 }
             }
+
+//            Se è presente un award period in conclusione si creano i csv con i vincitori e si inoltrano a SFG SIA
             if (endingPeriodId != null) {
                 List<WinningCitizen> winners = citizenDAO.findWinners(endingPeriodId);
-                if (!winners.isEmpty()) {
+
+//                Posso essere inviati solo i vincitori con strumento di pagamento valorizzato
+                if (winners != null && !winners.isEmpty()) {
                     List<WinningCitizen> winnersForCSV = new ArrayList<>();
-                    for (WinningCitizen winningCitizen : winners)
+                    for (WinningCitizen winningCitizen : winners) {
                         if (winningCitizen.getPayoffInstr() != null && !winningCitizen.getPayoffInstr().isEmpty())
                             winnersForCSV.add(winningCitizen);
+                    }
 
                     List<String> dataLines = new ArrayList<>();
                     int m = 0;
                     int n = 0;
-                    String fileName = "testCSV_";
+                    Path tempDir = Files.createTempDirectory("csv_directory");
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("NotificationServiceImpl.findWinners");
+                        logger.debug("temporaryDirectoryPath = " + tempDir.toAbsolutePath().toString());
+                    }
+                    logger.debug(tempDir.toAbsolutePath().toString());
+
+//                    Viene creata una riga nel csv per ogni vincitore
                     for (WinningCitizen winnerForCSV : winnersForCSV) {
                         n++;
+
+//                        La causale varia a seconda dell'esito sul controllo dell'intestatario dello strumento di pagamento
                         String paymentReason = (winnerForCSV.getAccountHolderFiscalCode().equals(winnerForCSV.getFiscalCode())) ?
                                 (winnerForCSV.getId().toString() +
                                         " - Cashback di Stato - dal "
@@ -150,8 +172,10 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                                         winnerForCSV.getAwardPeriodStart().toString() +
                                         " al " + winnerForCSV.getAwardPeriodEnd().toString() +
                                         " - " + winnerForCSV.getFiscalCode());
+
 //                        TODO definire accountHolder
                         String accountHolder = "";
+
                         String sb = winnerForCSV.getId().toString() + DELIMITER +
                                 winnerForCSV.getAccountHolderFiscalCode() + DELIMITER +
                                 winnerForCSV.getPayoffInstr() + DELIMITER +
@@ -168,25 +192,41 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                                 winnerForCSV.getCheckInstrStatus() + DELIMITER +
                                 winnerForCSV.getAccountHolderFiscalCode();
                         dataLines.add(sb);
+
+//                        Se il csv ha raggiunto il numero massimo di righe stabilito si procede con la fase di
+//                        encrypt e invio, i vincitori restanti verranno registrati su altri csv
                         if (dataLines.size() == maxRow || n == winnersForCSV.size()) {
                             m++;
                             DecimalFormat twoDigits = new DecimalFormat("00");
                             String currentFileNumber = twoDigits.format(m);
                             String totalFileNumber = twoDigits.format((int) Math.ceil((double) winnersForCSV.size() / maxRow));
-//                            TODO definire fileType
-                            File csvOutputFile = new File(serviceName + "."
-                                    + fileType + "."
-                                    + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + "."
-                                    + LocalTime.now().format(DateTimeFormatter.ofPattern("hhmmss"))+ "."
-                                    + currentFileNumber + "_" + totalFileNumber
-                                    + ".csv");
-//                            TODO rimuovere commento per produrre il csv
-//                            try (PrintWriter pw = new PrintWriter(csvOutputFile)) {
-//                                dataLines.forEach(pw::println);
-//                            }
 
-//                            TODO cifrare csv e inviare a sftp (decommentare)
-//                            winnersSftpConnector.sendFile(csvOutputFile);
+//                            Il file verrà creato in una directory temporanea
+                            File csvOutputFile = new File(tempDir + "\\"
+                                    + serviceName + "."
+                                    + authorityType + "."
+                                    + fileType + "."
+                                    + LocalDate.now().format(DateTimeFormatter.ofPattern("ddMMyyyy")) + "."
+                                    + LocalTime.now().format(DateTimeFormatter.ofPattern("HHmmss")) + "."
+                                    + currentFileNumber + "_" + totalFileNumber + "."
+                                    + dataLines.size()
+                                    + ".csv");
+                            try (PrintWriter pw = new PrintWriter(csvOutputFile)) {
+                                dataLines.forEach(pw::println);
+                            }
+
+//                            Il file CSV viene criptato e depositato nella stessa directory temporanea
+                            String publicKeyWithLineBreaks = publicKey.replace("\\n", System.lineSeparator());
+                            InputStream publicKeyIS = new ByteArrayInputStream(publicKeyWithLineBreaks.getBytes());
+                            FileOutputStream outputFOS = new FileOutputStream(csvOutputFile.getAbsolutePath().concat(".pgp"));
+                            EncryptUtil.encryptFile(outputFOS,
+                                    csvOutputFile.getAbsolutePath(),
+                                    EncryptUtil.readPublicKey(publicKeyIS),
+                                    false, true);
+
+//                            Il file viene infine inviato su SFTP SIA
+                            File csvPgpFile = new File(csvOutputFile.getAbsolutePath().concat(".pgp"));
+                            winnersSftpConnector.sendFile(csvPgpFile);
                             dataLines.clear();
                         }
                     }
