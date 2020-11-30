@@ -16,6 +16,8 @@ spec:
             - containerPort: 8080
           envFrom:
             - secretRef:
+                name: bpdmsnotificationmanager
+            - secretRef:
                 name: postgres-credentials
             - configMapRef:
                 name: eventhub-logging
