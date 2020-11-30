@@ -26,6 +26,10 @@ import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.ArrayList;
@@ -57,7 +61,6 @@ public class NotificationServiceImplTest {
     @MockBean
     private WinnersSftpConnector winnersSftpConnectorMock;
 
-
     @PostConstruct
     public void configureMock() {
         BDDMockito.when(restConnector.notify(Mockito.any(NotificationDTO.class)))
@@ -74,23 +77,7 @@ public class NotificationServiceImplTest {
                     result.add("CF3");
                     return result;
                 });
-        BDDMockito.when(awardPeriodRestClientMock.findActiveAwardPeriods())
-                .thenAnswer(invocation -> {
-                    List<AwardPeriod> result = new ArrayList<>();
-                    AwardPeriod awp1 = new AwardPeriod();
-                    awp1.setAwardPeriodId(2L);
-                    awp1.setEndDate(LocalDate.now().minus(Period.ofDays(15)));
-                    awp1.setGracePeriod(15L);
-                    awp1.setStartDate(LocalDate.now().minus(Period.ofDays(50)));
-                    result.add(awp1);
-                    AwardPeriod awp2 = new AwardPeriod();
-                    awp2.setAwardPeriodId(1L);
-                    awp2.setEndDate(LocalDate.now().minus(Period.ofDays(5)));
-                    awp2.setGracePeriod(15L);
-                    awp2.setStartDate(LocalDate.now().minus(Period.ofDays(40)));
-                    result.add(awp2);
-                    return result;
-                });
+
         BDDMockito.when(citizenDAOMock.findWinners(Mockito.any(Long.class)))
                 .thenAnswer(invocation -> {
                     List<WinningCitizen> result = new ArrayList<>();
@@ -133,12 +120,75 @@ public class NotificationServiceImplTest {
     }
 
     @Test
-    public void testFindWinners(){
+    public void testFindWinnersEndingPeriod(){
+
+        BDDMockito.when(awardPeriodRestClientMock.findActiveAwardPeriods())
+                .thenAnswer(invocation -> {
+                    List<AwardPeriod> result = new ArrayList<>();
+                    AwardPeriod awp1 = new AwardPeriod();
+                    awp1.setAwardPeriodId(2L);
+                    awp1.setEndDate(LocalDate.now().minus(Period.ofDays(15)));
+                    awp1.setGracePeriod(15L);
+                    awp1.setStartDate(LocalDate.now().minus(Period.ofDays(50)));
+                    result.add(awp1);
+                    AwardPeriod awp2 = new AwardPeriod();
+                    awp2.setAwardPeriodId(1L);
+                    awp2.setEndDate(LocalDate.now().minus(Period.ofDays(5)));
+                    awp2.setGracePeriod(15L);
+                    awp2.setStartDate(LocalDate.now().minus(Period.ofDays(40)));
+                    result.add(awp2);
+                    return result;
+                });
 
         notificationService.findWinners();
-//        Todo Rimuovere commento
-//        verify(winnersSftpConnectorMock, only()).sendFile(Mockito.any(File.class));
+
+        verify(citizenDAOMock, only()).findWinners(2L);
+        verify(winnersSftpConnectorMock, only()).sendFile(Mockito.any(File.class));
         verify(awardPeriodRestClientMock, only()).findActiveAwardPeriods();
 
     }
+
+    @Test
+    public void testFindWinners(){
+
+        BDDMockito.when(awardPeriodRestClientMock.findActiveAwardPeriods())
+                .thenAnswer(invocation -> {
+                    List<AwardPeriod> result = new ArrayList<>();
+                    AwardPeriod awp1 = new AwardPeriod();
+                    awp1.setAwardPeriodId(2L);
+                    awp1.setEndDate(LocalDate.now());
+                    awp1.setGracePeriod(15L);
+                    awp1.setStartDate(LocalDate.now().minus(Period.ofDays(50)));
+                    result.add(awp1);
+                    AwardPeriod awp2 = new AwardPeriod();
+                    awp2.setAwardPeriodId(1L);
+                    awp2.setEndDate(LocalDate.now().minus(Period.ofDays(5)));
+                    awp2.setGracePeriod(15L);
+                    awp2.setStartDate(LocalDate.now().minus(Period.ofDays(40)));
+                    result.add(awp2);
+                    return result;
+                });
+
+        notificationService.findWinners();
+
+        verifyZeroInteractions(citizenDAOMock, winnersSftpConnectorMock);
+        verify(awardPeriodRestClientMock, only()).findActiveAwardPeriods();
+
+    }
+
+    static String readFile(String path, Charset encoding)
+            throws IOException
+    {
+        byte[] encoded = Files.readAllBytes(Paths.get(path));
+        return new String(encoded, encoding);
+    }
+    static {
+        try {
+            String publicKey = readFile("src/test/resources/test_pgp/test", StandardCharsets.US_ASCII);
+            System.setProperty("NOTIFICATION_SERVICE_NOTIFY_WINNERS_PUBLIC_KEY", publicKey);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 }

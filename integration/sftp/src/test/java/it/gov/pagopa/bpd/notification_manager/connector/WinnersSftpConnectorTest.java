@@ -18,11 +18,15 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.StreamUtils;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.RSAPublicKeySpec;
@@ -119,6 +123,21 @@ public class WinnersSftpConnectorTest {
     public static void stopServer() {
         if (server.isStarted()) {
             server.close();
+        }
+    }
+
+    static String readFile(String path, Charset encoding)
+            throws IOException
+    {
+        byte[] encoded = Files.readAllBytes(Paths.get(path));
+        return new String(encoded, encoding);
+    }
+    static {
+        try {
+            String privateKey = readFile("src/test/resources/test_sftp/test", StandardCharsets.US_ASCII);
+            System.setProperty("NOTIFICATION_SFTP_PRIVATE_KEY", privateKey);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

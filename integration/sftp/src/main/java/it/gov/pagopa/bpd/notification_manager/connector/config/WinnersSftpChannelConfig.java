@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.expression.common.LiteralExpression;
 import org.springframework.integration.annotation.Gateway;
@@ -33,7 +34,7 @@ public class WinnersSftpChannelConfig {
     @Value("${connectors.sftpConfigurations.connection.password}")
     private String password;
     @Value("${connectors.sftpConfigurations.connection.privateKey:#{null}}")
-    private Resource privateKey;
+    private String privateKey;
     @Value("${connectors.sftpConfigurations.connection.passphrase}")
     private String passphrase;
     @Value("${connectors.sftpConfigurations.connection.directory}")
@@ -48,7 +49,10 @@ public class WinnersSftpChannelConfig {
         factory.setPort(port);
         factory.setUser(user);
         if (privateKey != null) {
-            factory.setPrivateKey(privateKey);
+            Resource privateKeyResource = new ByteArrayResource((
+                    privateKey.replace("\\n", System.lineSeparator()))
+                    .getBytes());
+            factory.setPrivateKey(privateKeyResource);
             factory.setPrivateKeyPassphrase(passphrase);
         } else {
             factory.setPassword(password);
