@@ -161,34 +161,38 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                     for (WinningCitizen winnerForCSV : winnersForCSV) {
                         n++;
 
+                        DecimalFormat nineDigits = new DecimalFormat("000000000");
+                        DecimalFormat twoDigits = new DecimalFormat("00");
+                        DecimalFormat sixDigits = new DecimalFormat("000000");
+
 //                        La causale varia a seconda dell'esito sul controllo dell'intestatario dello strumento di pagamento
                         String paymentReason = (winnerForCSV.getAccountHolderFiscalCode().equals(winnerForCSV.getFiscalCode())) ?
-                                (winnerForCSV.getId().toString() +
+                                (nineDigits.format(winnerForCSV.getId()) +
                                         " - Cashback di Stato - dal "
-                                        + winnerForCSV.getAwardPeriodStart().toString() +
-                                        " al " + winnerForCSV.getAwardPeriodEnd().toString()) :
-                                (winnerForCSV.getId().toString() +
+                                        + winnerForCSV.getAwardPeriodStart().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) +
+                                        " al " + winnerForCSV.getAwardPeriodEnd().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))) :
+                                (nineDigits.format(winnerForCSV.getId()) +
                                         " - Cashback di Stato - dal " +
-                                        winnerForCSV.getAwardPeriodStart().toString() +
-                                        " al " + winnerForCSV.getAwardPeriodEnd().toString() +
+                                        winnerForCSV.getAwardPeriodStart().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) +
+                                        " al " + winnerForCSV.getAwardPeriodEnd().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) +
                                         " - " + winnerForCSV.getFiscalCode());
 
 //                        TODO definire accountHolder
                         String accountHolder = "";
 
-                        String sb = winnerForCSV.getId().toString() + DELIMITER +
+                        String sb = nineDigits.format(winnerForCSV.getId()) + DELIMITER +
                                 winnerForCSV.getAccountHolderFiscalCode() + DELIMITER +
                                 winnerForCSV.getPayoffInstr() + DELIMITER +
                                 winnerForCSV.getAccountHolderName() + DELIMITER +
                                 winnerForCSV.getAccountHolderSurname() + DELIMITER +
-                                winnerForCSV.getAmount().toString() + DELIMITER +
-                                winnerForCSV.getCashback().toString() + DELIMITER +
-                                winnerForCSV.getJackpot().toString() + DELIMITER +
+                                sixDigits.format(winnerForCSV.getAmount()) + DELIMITER +
                                 paymentReason + DELIMITER +
                                 winnerForCSV.getTypology() + DELIMITER +
-                                winnerForCSV.getAwardPeriodId().toString() + DELIMITER +
-                                winnerForCSV.getAwardPeriodStart().toString() + DELIMITER +
-                                winnerForCSV.getAwardPeriodEnd().toString() + DELIMITER +
+                                twoDigits.format(winnerForCSV.getAwardPeriodId()) + DELIMITER +
+                                winnerForCSV.getAwardPeriodStart().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + DELIMITER +
+                                winnerForCSV.getAwardPeriodEnd().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + DELIMITER +
+                                sixDigits.format(winnerForCSV.getCashback()) + DELIMITER +
+                                sixDigits.format(winnerForCSV.getJackpot()) + DELIMITER +
                                 winnerForCSV.getCheckInstrStatus() + DELIMITER +
                                 winnerForCSV.getAccountHolderFiscalCode();
                         dataLines.add(sb);
@@ -197,7 +201,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
 //                        encrypt e invio, i vincitori restanti verranno registrati su altri csv
                         if (dataLines.size() == maxRow || n == winnersForCSV.size()) {
                             m++;
-                            DecimalFormat twoDigits = new DecimalFormat("00");
+
                             String currentFileNumber = twoDigits.format(m);
                             String totalFileNumber = twoDigits.format((int) Math.ceil((double) winnersForCSV.size() / maxRow));
 
