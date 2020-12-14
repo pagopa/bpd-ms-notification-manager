@@ -155,7 +155,12 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                         logger.debug("NotificationServiceImpl.findWinners");
                         logger.debug("temporaryDirectoryPath = " + tempDir.toAbsolutePath().toString());
                     }
-                    logger.debug(tempDir.toAbsolutePath().toString());
+                    String filenamePrefix = tempDir + "\\"
+                            + serviceName + "."
+                            + authorityType + "."
+                            + fileType + "."
+                            + LocalDate.now().format(DateTimeFormatter.ofPattern("ddMMyyyy")) + "."
+                            + LocalTime.now().format(DateTimeFormatter.ofPattern("HHmmss")) + ".";
 
 //                    Viene creata una riga nel csv per ogni vincitore
                     for (WinningCitizen winnerForCSV : winnersForCSV) {
@@ -177,9 +182,6 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                                         " al " + winnerForCSV.getAwardPeriodEnd().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) +
                                         " - " + winnerForCSV.getFiscalCode());
 
-//                        TODO definire accountHolder
-                        String accountHolder = "";
-
                         String sb = nineDigits.format(winnerForCSV.getId()) + DELIMITER +
                                 winnerForCSV.getAccountHolderFiscalCode() + DELIMITER +
                                 winnerForCSV.getPayoffInstr() + DELIMITER +
@@ -194,7 +196,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                                 sixDigits.format(winnerForCSV.getCashback()) + DELIMITER +
                                 sixDigits.format(winnerForCSV.getJackpot()) + DELIMITER +
                                 winnerForCSV.getCheckInstrStatus() + DELIMITER +
-                                winnerForCSV.getAccountHolderFiscalCode();
+                                winnerForCSV.getTechnicalAccountHolder();
                         dataLines.add(sb);
 
 //                        Se il csv ha raggiunto il numero massimo di righe stabilito si procede con la fase di
@@ -206,12 +208,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                             String totalFileNumber = twoDigits.format((int) Math.ceil((double) winnersForCSV.size() / maxRow));
 
 //                            Il file verrà creato in una directory temporanea
-                            File csvOutputFile = new File(tempDir + "\\"
-                                    + serviceName + "."
-                                    + authorityType + "."
-                                    + fileType + "."
-                                    + LocalDate.now().format(DateTimeFormatter.ofPattern("ddMMyyyy")) + "."
-                                    + LocalTime.now().format(DateTimeFormatter.ofPattern("HHmmss")) + "."
+                            File csvOutputFile = new File(filenamePrefix
                                     + currentFileNumber + "_" + totalFileNumber + "."
                                     + dataLines.size()
                                     + ".csv");
