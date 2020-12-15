@@ -3,12 +3,17 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>it.gov.pagopa.bpd.ms</groupId>
-        <version>1.0.1</version>
+        <version>1.0.4-rc1</version>
         <artifactId>bpd-ms-starter-parent</artifactId>
     </parent>
     <artifactId>bpd-ms-notification-manager</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
+
+    <properties>
+        <bpd-commons.version>1.0.8-rc1</bpd-commons.version>
+    </properties>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -40,34 +45,34 @@
             <dependency>
                 <groupId>it.gov.pagopa.bpd.commons.api</groupId>
                 <artifactId>bpd-commons-api-rest</artifactId>
-                <version>1.0.2</version>
+                <version>${bpd-commons.version}</version>
             </dependency>
             <dependency>
                 <groupId>it.gov.pagopa.bpd.commons</groupId>
                 <artifactId>bpd-commons-core</artifactId>
-                <version>1.0.2</version>
+                <version>${bpd-commons.version}</version>
             </dependency>
             <dependency>
                 <groupId>it.gov.pagopa.bpd.commons.integration</groupId>
                 <artifactId>bpd-commons-integration-jpa</artifactId>
-                <version>1.0.2</version>
+                <version>${bpd-commons.version}</version>
             </dependency>
             <dependency>
                 <groupId>it.gov.pagopa.bpd.commons.integration</groupId>
                 <artifactId>bpd-commons-integration-jpa</artifactId>
-                <version>1.0.2</version>
+                <version>${bpd-commons.version}</version>
                 <type>test-jar</type>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>it.gov.pagopa.bpd.commons.integration</groupId>
                 <artifactId>bpd-commons-integration-rest</artifactId>
-                <version>1.0.2</version>
+                <version>${bpd-commons.version}</version>
             </dependency>
             <dependency>
                 <groupId>it.gov.pagopa.bpd.commons.integration</groupId>
                 <artifactId>bpd-commons-integration-rest</artifactId>
-                <version>1.0.2</version>
+                <version>${bpd-commons.version}</version>
                 <type>test-jar</type>
             </dependency>
             <dependency>
@@ -102,6 +107,26 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <distributionManagement>
+        <repository>
+            <id>cstar</id>
+            <url>https://pkgs.dev.azure.com/sia-dds/cstar/_packaging/cstar/maven/v1</url>
+        </repository>
+    </distributionManagement>
+
+    <repositories>
+        <repository>
+            <id>cstar</id>
+            <url>https://pkgs.dev.azure.com/sia-dds/cstar/_packaging/cstar/maven/v1</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 
     <scm>
         <developerConnection>scm:git:https://github.com/pagopa/bpd-ms-notification-manager.git</developerConnection>
