@@ -9,8 +9,6 @@ import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.Notific
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.CitizenDAO;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.WinningCitizen;
 import it.gov.pagopa.bpd.notification_manager.mapper.NotificationDtoMapper;
-import org.apache.tomcat.jni.Local;
-import org.joda.time.Days;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.BDDMockito;
@@ -142,7 +140,7 @@ public class NotificationServiceImplTest {
 
         notificationService.findWinners();
 
-        verify(citizenDAOMock, only()).findWinners(2L);
+        verify(citizenDAOMock).findWinners(2L);
         verify(winnersSftpConnectorMock, only()).sendFile(Mockito.any(File.class));
         verify(awardPeriodRestClientMock, only()).findActiveAwardPeriods();
 

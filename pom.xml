@@ -3,15 +3,15 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>it.gov.pagopa.bpd.ms</groupId>
-        <version>1.0.4-rc1</version>
+        <version>1.0.4</version>
         <artifactId>bpd-ms-starter-parent</artifactId>
     </parent>
     <artifactId>bpd-ms-notification-manager</artifactId>
-    <version>1.1.0-rc2</version>
+    <version>1.1.0-rc4</version>
     <packaging>pom</packaging>
 
     <properties>
-        <bpd-commons.version>1.0.8-rc1</bpd-commons.version>
+        <bpd-commons.version>1.0.8</bpd-commons.version>
     </properties>
 
     <dependencyManagement>
@@ -19,27 +19,27 @@
             <dependency>
                 <groupId>it.gov.pagopa.bpd.ms.notification_manager.integration</groupId>
                 <artifactId>bpd-ms-notification-manager-integration-jpa</artifactId>
-                <version>1.1.0-rc2</version>
+                <version>1.1.0-rc4</version>
             </dependency>
             <dependency>
                 <groupId>it.gov.pagopa.bpd.ms.notification_manager.integration</groupId>
                 <artifactId>bpd-ms-notification-manager-integration-rest</artifactId>
-                <version>1.1.0-rc2</version>
+                <version>1.1.0-rc4</version>
             </dependency>
             <dependency>
                 <groupId>it.gov.pagopa.bpd.ms.notification_manager.integration</groupId>
                 <artifactId>bpd-ms-notification-manager-integration-sftp</artifactId>
-                <version>1.1.0-rc2</version>
+                <version>1.1.0-rc4</version>
             </dependency>
             <dependency>
                 <groupId>it.gov.pagopa.bpd.ms.notification_manager</groupId>
                 <artifactId>bpd-ms-notification-manager-core</artifactId>
-                <version>1.1.0-rc2</version>
+                <version>1.1.0-rc4</version>
             </dependency>
             <dependency>
                 <groupId>it.gov.pagopa.bpd.ms.notification_manager.api</groupId>
                 <artifactId>bpd-ms-notification-manager-api-rest</artifactId>
-                <version>1.1.0-rc2</version>
+                <version>1.1.0-rc4</version>
             </dependency>
             <dependency>
                 <groupId>it.gov.pagopa.bpd.commons.api</groupId>
@@ -134,7 +134,7 @@
 
     <scm>
         <developerConnection>scm:git:https://github.com/pagopa/bpd-ms-notification-manager.git</developerConnection>
-        <tag>1.1.0-rc1</tag>
+        <tag>1.1.0-rc4</tag>
     </scm>
 
 </project>
