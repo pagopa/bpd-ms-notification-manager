@@ -141,6 +141,11 @@ class NotificationServiceImpl extends BaseService implements NotificationService
 
 //                Posso essere inviati solo i vincitori con strumento di pagamento valorizzato
                 if (winners != null && !winners.isEmpty()) {
+
+                    DecimalFormat nineDigits = new DecimalFormat("000000000");
+                    DecimalFormat twoDigits = new DecimalFormat("00");
+                    DecimalFormat sixDigits = new DecimalFormat("000000");
+
                     List<WinningCitizen> winnersForCSV = new ArrayList<>();
                     for (WinningCitizen winningCitizen : winners) {
                         if (winningCitizen.getPayoffInstr() != null && !winningCitizen.getPayoffInstr().isEmpty())
@@ -162,13 +167,29 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                             + LocalDate.now().format(DateTimeFormatter.ofPattern("ddMMyyyy")) + "."
                             + LocalTime.now().format(DateTimeFormatter.ofPattern("HHmmss")) + ".";
 
+                    String totalFileNumber = twoDigits.format((int) Math.ceil((double) winnersForCSV.size() / maxRow));
+                    String currentFileNumber = null;
+
+                    String fileName= null;
+
+                    boolean initLoop=false;
+
 //                    Viene creata una riga nel csv per ogni vincitore
                     for (WinningCitizen winnerForCSV : winnersForCSV) {
-                        n++;
 
-                        DecimalFormat nineDigits = new DecimalFormat("000000000");
-                        DecimalFormat twoDigits = new DecimalFormat("00");
-                        DecimalFormat sixDigits = new DecimalFormat("000000");
+                        if(!initLoop){
+                            m++;
+                            currentFileNumber = twoDigits.format(m);
+
+                            fileName = filenamePrefix
+                                    + currentFileNumber + "_" + totalFileNumber + "."
+                                    + String.valueOf((winnersForCSV.size()<=maxRow ? winnersForCSV.size() :
+                                                            (winnersForCSV.size()/maxRow>m ? maxRow : winnersForCSV.size()%maxRow)))
+                                    + ".csv";
+                            initLoop=true;
+                        }
+
+                        n++;
 
 //                        La causale varia a seconda dell'esito sul controllo dell'intestatario dello strumento di pagamento
                         String paymentReason = (winnerForCSV.getAccountHolderFiscalCode().equals(winnerForCSV.getFiscalCode())) ?
@@ -199,19 +220,15 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                                 winnerForCSV.getTechnicalAccountHolder();
                         dataLines.add(sb);
 
+                        winnerForCSV.setChunkFilename(fileName);
+                        winnerForCSV.setStatus(WinningCitizen.Status.SEND);
+
 //                        Se il csv ha raggiunto il numero massimo di righe stabilito si procede con la fase di
 //                        encrypt e invio, i vincitori restanti verranno registrati su altri csv
                         if (dataLines.size() == maxRow || n == winnersForCSV.size()) {
-                            m++;
-
-                            String currentFileNumber = twoDigits.format(m);
-                            String totalFileNumber = twoDigits.format((int) Math.ceil((double) winnersForCSV.size() / maxRow));
 
 //                            Il file verrà creato in una directory temporanea
-                            File csvOutputFile = new File(filenamePrefix
-                                    + currentFileNumber + "_" + totalFileNumber + "."
-                                    + dataLines.size()
-                                    + ".csv");
+                            File csvOutputFile = new File(fileName);
                             try (PrintWriter pw = new PrintWriter(csvOutputFile)) {
                                 dataLines.forEach(pw::println);
                             }
@@ -229,6 +246,8 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                             File csvPgpFile = new File(csvOutputFile.getAbsolutePath().concat(".pgp"));
                             winnersSftpConnector.sendFile(csvPgpFile);
                             dataLines.clear();
+
+                            initLoop=false;
                         }
                     }
                 }
