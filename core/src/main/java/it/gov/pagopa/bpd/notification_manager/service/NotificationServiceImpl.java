@@ -46,6 +46,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     private final String markdown;
     private final String DELIMITER;
     private final Long maxRow;
+    private final Long maxRecordToSave;
     private final String serviceName;
     private final String authorityType;
     private final String fileType;
@@ -63,6 +64,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
             @Value("${core.NotificationService.notifyUnsetPayoffInstr.markdown}") String markdown,
             @Value("${core.NotificationService.findWinners.delimiter}") String delimiter,
             @Value("${core.NotificationService.findWinners.maxRow}") Long maxRow,
+            @Value("${core.NotificationService.findWinners.maxRecordToSave}") Long maxRecordToSave,
             @Value("${core.NotificationService.findWinners.serviceName}") String serviceName,
             @Value("${core.NotificationService.findWinners.authorityType}") String authorityType,
             @Value("${core.NotificationService.findWinners.fileType}") String fileType,
@@ -77,6 +79,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
         this.markdown = markdown;
         DELIMITER = delimiter;
         this.maxRow = maxRow;
+        this.maxRecordToSave = maxRecordToSave;
         this.serviceName = serviceName;
         this.authorityType = authorityType;
         this.fileType = fileType;
@@ -135,6 +138,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                 }
             }
 
+
 //            Se è presente un award period in conclusione si creano i csv con i vincitori e si inoltrano a SFG SIA
             if (endingPeriodId != null) {
                 List<WinningCitizen> winners = citizenDAO.findWinners(endingPeriodId);
@@ -160,7 +164,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                         logger.debug("NotificationServiceImpl.findWinners");
                         logger.debug("temporaryDirectoryPath = " + tempDir.toAbsolutePath().toString());
                     }
-                    String filenamePrefix = tempDir + "\\"
+                    String filenamePrefix = tempDir + File.separator
                             + serviceName + "."
                             + authorityType + "."
                             + fileType + "."
@@ -170,14 +174,16 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                     String totalFileNumber = twoDigits.format((int) Math.ceil((double) winnersForCSV.size() / maxRow));
                     String currentFileNumber = null;
 
-                    String fileName= null;
+                    String fileName = null;
 
-                    boolean initLoop=false;
+                    boolean initLoop = false;
+
+                    List<WinningCitizen> winnersToUpdate = new ArrayList<>();
 
 //                    Viene creata una riga nel csv per ogni vincitore
                     for (WinningCitizen winnerForCSV : winnersForCSV) {
 
-                        if(!initLoop){
+                        if (!initLoop) {
                             m++;
                             currentFileNumber = twoDigits.format(m);
 
@@ -223,6 +229,13 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                         winnerForCSV.setChunkFilename(fileName);
                         winnerForCSV.setStatus(WinningCitizen.Status.SEND);
 
+                        winnersToUpdate.add(winnerForCSV);
+                        if (winnersToUpdate.size() == maxRecordToSave || n == winnersForCSV.size()) {
+                            citizenDAO.saveAll(winnersToUpdate);
+                            winnersToUpdate.clear();
+                        }
+
+
 //                        Se il csv ha raggiunto il numero massimo di righe stabilito si procede con la fase di
 //                        encrypt e invio, i vincitori restanti verranno registrati su altri csv
                         if (dataLines.size() == maxRow || n == winnersForCSV.size()) {
@@ -242,12 +255,17 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                                     EncryptUtil.readPublicKey(publicKeyIS),
                                     false, true);
 
+
 //                            Il file viene infine inviato su SFTP SIA
                             File csvPgpFile = new File(csvOutputFile.getAbsolutePath().concat(".pgp"));
                             winnersSftpConnector.sendFile(csvPgpFile);
+                            if (logger.isInfoEnabled()) {
+                                logger.info("NotificationManagerServiceImpl.findWinners");
+                                logger.info("Sent File: " + csvPgpFile.getName());
+                            }
                             dataLines.clear();
 
-                            initLoop=false;
+                            initLoop = false;
                         }
                     }
                 }
