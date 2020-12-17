@@ -189,10 +189,10 @@ class NotificationServiceImpl extends BaseService implements NotificationService
 
                             fileName = filenamePrefix
                                     + currentFileNumber + "_" + totalFileNumber + "."
-                                    + String.valueOf((winnersForCSV.size()<=maxRow ? winnersForCSV.size() :
-                                                            (winnersForCSV.size()/maxRow>m ? maxRow : winnersForCSV.size()%maxRow)))
+                                    + String.valueOf((winnersForCSV.size() <= maxRow ? winnersForCSV.size() :
+                                    ((int) Math.ceil(((double) winnersForCSV.size() / maxRow)) > m ? maxRow : winnersForCSV.size() % maxRow)))
                                     + ".csv";
-                            initLoop=true;
+                            initLoop = true;
                         }
 
                         n++;
