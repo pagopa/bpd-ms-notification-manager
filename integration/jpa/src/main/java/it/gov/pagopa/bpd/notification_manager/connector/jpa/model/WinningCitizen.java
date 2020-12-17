@@ -4,10 +4,7 @@ import it.gov.pagopa.bpd.common.connector.jpa.model.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
@@ -63,4 +60,14 @@ public class WinningCitizen extends BaseEntity {
     @Column(name = "technical_account_holder_s")
     private String technicalAccountHolder;
 
+    @Column(name = "chunk_filename_s")
+    private String chunkFilename;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status_s")
+    private Status status;
+
+    public enum Status {
+        NEW, SEND, RECOVERY
+    }
 }
