@@ -7,8 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.IOException;
-
 @RestController
 @Slf4j
 class BpdNotificationManagerControllerImpl extends StatelessController implements BpdNotificationManagerController {
@@ -23,11 +21,13 @@ class BpdNotificationManagerControllerImpl extends StatelessController implement
     }
 
     @Override
-    public void update() throws IOException {
-
-//        notificationService.updateRankingAndWinners();
+    public void findWinners() {
         notificationService.findWinners();
-//        notificationRestClient.notify();
 
+    }
+
+    @Override
+    public void notifyUnset() {
+        notificationService.notifyUnsetPayoffInstr();
     }
 }

@@ -1,7 +1,5 @@
 package it.gov.pagopa.bpd.notification_manager.connector.io_backend;
 
-import it.gov.pagopa.bpd.notification_manager.connector.io_backend.NotificationRestClient;
-import it.gov.pagopa.bpd.notification_manager.connector.io_backend.NotificationRestConnector;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.NotificationDTO;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.NotificationResource;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,7 +14,7 @@ class NotificationRestConnectorImpl implements NotificationRestConnector {
     private final NotificationRestClient notificationRestClient;
 
     public NotificationRestConnectorImpl(
-            @Value("rest-client.notification.notify.token-value") String subscriptionKey,
+            @Value("${rest-client.notification.notify.token-value}") String subscriptionKey,
             NotificationRestClient notificationRestClient) {
         this.subscriptionKey = subscriptionKey;
         this.notificationRestClient = notificationRestClient;

@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "POST",
-    "urlPath": "/c/progetto-io/messages",
+    "urlPath": "/api/v1/messages",
     "bodyPatterns": [
       {
         "equalToJson": {
@@ -9,7 +9,6 @@
           "content": {
             "subject": "subject",
             "markdown": "markdown"
-
           },
           "fiscal_code": "test"
         }

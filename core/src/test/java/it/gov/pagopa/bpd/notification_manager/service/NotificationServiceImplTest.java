@@ -120,13 +120,13 @@ public class NotificationServiceImplTest {
     @Test
     public void testFindWinnersEndingPeriod(){
 
-        BDDMockito.when(awardPeriodRestClientMock.findActiveAwardPeriods())
+        BDDMockito.when(awardPeriodRestClientMock.findAllAwardPeriods())
                 .thenAnswer(invocation -> {
                     List<AwardPeriod> result = new ArrayList<>();
                     AwardPeriod awp1 = new AwardPeriod();
                     awp1.setAwardPeriodId(2L);
                     awp1.setEndDate(LocalDate.now().minus(Period.ofDays(15)));
-                    awp1.setGracePeriod(15L);
+                    awp1.setGracePeriod(14L);
                     awp1.setStartDate(LocalDate.now().minus(Period.ofDays(50)));
                     result.add(awp1);
                     AwardPeriod awp2 = new AwardPeriod();
@@ -142,14 +142,14 @@ public class NotificationServiceImplTest {
 
         verify(citizenDAOMock).findWinners(2L);
         verify(winnersSftpConnectorMock, only()).sendFile(Mockito.any(File.class));
-        verify(awardPeriodRestClientMock, only()).findActiveAwardPeriods();
+        verify(awardPeriodRestClientMock, only()).findAllAwardPeriods();
 
     }
 
     @Test
     public void testFindWinners(){
 
-        BDDMockito.when(awardPeriodRestClientMock.findActiveAwardPeriods())
+        BDDMockito.when(awardPeriodRestClientMock.findAllAwardPeriods())
                 .thenAnswer(invocation -> {
                     List<AwardPeriod> result = new ArrayList<>();
                     AwardPeriod awp1 = new AwardPeriod();
@@ -170,7 +170,7 @@ public class NotificationServiceImplTest {
         notificationService.findWinners();
 
         verifyZeroInteractions(citizenDAOMock, winnersSftpConnectorMock);
-        verify(awardPeriodRestClientMock, only()).findActiveAwardPeriods();
+        verify(awardPeriodRestClientMock, only()).findAllAwardPeriods();
 
     }
 

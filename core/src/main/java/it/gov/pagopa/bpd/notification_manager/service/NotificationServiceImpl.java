@@ -95,12 +95,14 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                 logger.info("NotificationManagerServiceImpl.notifyUnsetPayoffInstr");
             }
             List<String> citizensFC = citizenDAO.findFiscalCodesWithUnsetPayoffInstr();
-            for (String citizenCf : citizensFC) {
-                NotificationDTO dto = notificationDtoMapper.NotificationDtoMapper(
-                        citizenCf, timeToLive, subject, markdown);
-                NotificationResource resource = notificationRestConnector.notify(dto);
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Notified citizen, notification id: " + resource.getId());
+            if (citizensFC != null && !citizensFC.isEmpty()) {
+                for (String citizenCf : citizensFC) {
+                    NotificationDTO dto = notificationDtoMapper.NotificationDtoMapper(
+                            citizenCf, timeToLive, subject, markdown);
+                    NotificationResource resource = notificationRestConnector.notify(dto);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Notified citizen, notification id: " + resource.getId());
+                    }
                 }
             }
         } catch (Exception e) {
@@ -114,10 +116,13 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     @Scheduled(cron = "${core.NotificationService.updateRankingAndWinners.scheduler}")
     public void updateRankingAndWinners() {
         if (logger.isInfoEnabled()) {
-            logger.info("NotificationManagerServiceImpl.updateRankingAndWinners");
-            logger.info("Executing procedure: updateRankingAndWinners");
+            logger.info("Executing procedure: updateRanking");
         }
         citizenDAO.updateRankingAndWinners();
+        if (logger.isInfoEnabled()) {
+            logger.info("Executed procedure: updateRanking");
+        }
+
     }
 
     @Override
@@ -127,25 +132,30 @@ class NotificationServiceImpl extends BaseService implements NotificationService
             if (logger.isInfoEnabled()) {
                 logger.info("NotificationManagerServiceImpl.findWinners");
             }
-            List<AwardPeriod> activePeriods = awardPeriodRestClient.findActiveAwardPeriods();
+
+            List<AwardPeriod> awardPeriods = awardPeriodRestClient.findAllAwardPeriods();
 
 //            Ricerca dell'award period in conclusione
             Long endingPeriodId = null;
-            for (AwardPeriod activePeriod : activePeriods) {
-                if (LocalDate.now().equals(activePeriod.getEndDate()
-                        .plus(Period.ofDays(activePeriod.getGracePeriod().intValue())))) {
-                    endingPeriodId = activePeriod.getAwardPeriodId();
+            for (AwardPeriod awardPeriod : awardPeriods) {
+                if (LocalDate.now().equals(awardPeriod.getEndDate()
+                        .plus(Period.ofDays(awardPeriod.getGracePeriod().intValue() + 1)))) {
+                    endingPeriodId = awardPeriod.getAwardPeriodId();
                 }
             }
 
 
 //            Se è presente un award period in conclusione si creano i csv con i vincitori e si inoltrano a SFG SIA
             if (endingPeriodId != null) {
+
+                logger.info("Starting findWinners query");
                 List<WinningCitizen> winners = citizenDAO.findWinners(endingPeriodId);
+                logger.info("Search for winners finished");
 
 //                Posso essere inviati solo i vincitori con strumento di pagamento valorizzato
                 if (winners != null && !winners.isEmpty()) {
 
+                    logger.info("Winners found");
                     DecimalFormat nineDigits = new DecimalFormat("000000000");
                     DecimalFormat twoDigits = new DecimalFormat("00");
                     DecimalFormat sixDigits = new DecimalFormat("000000");
@@ -160,10 +170,9 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                     int m = 0;
                     int n = 0;
                     Path tempDir = Files.createTempDirectory("csv_directory");
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("NotificationServiceImpl.findWinners");
-                        logger.debug("temporaryDirectoryPath = " + tempDir.toAbsolutePath().toString());
-                    }
+
+                    logger.info("temporaryDirectoryPath = " + tempDir.toAbsolutePath().toString());
+
                     String filenamePrefix = tempDir + File.separator
                             + serviceName + "."
                             + authorityType + "."
