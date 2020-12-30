@@ -266,6 +266,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
 
 
 //                            Il file viene infine inviato su SFTP SIA
+                            logger.info("Sending File: " + csvOutputFile.getName().concat(".pgp"));
                             File csvPgpFile = new File(csvOutputFile.getAbsolutePath().concat(".pgp"));
                             winnersSftpConnector.sendFile(csvPgpFile);
                             if (logger.isInfoEnabled()) {
