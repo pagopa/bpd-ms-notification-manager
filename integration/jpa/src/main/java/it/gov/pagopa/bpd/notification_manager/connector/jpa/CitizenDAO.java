@@ -18,7 +18,7 @@ public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long>{
     @Query(nativeQuery = true, value = "SELECT * from update_bpd_citizen_ranking()")
     Boolean updateRankingAndWinners();
 
-    @Query("SELECT a FROM WinningCitizen a WHERE a.awardPeriodId = :awardPeriodId")
+    @Query("SELECT a FROM WinningCitizen a WHERE a.awardPeriodId = :awardPeriodId and a.enabled = true")
     List<WinningCitizen> findWinners(@Param("awardPeriodId") Long awardPeriodId);
 
 }

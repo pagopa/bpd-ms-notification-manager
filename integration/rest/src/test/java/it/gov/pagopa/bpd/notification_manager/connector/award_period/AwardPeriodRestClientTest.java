@@ -5,7 +5,6 @@ import com.github.tomakehurst.wiremock.junit.WireMockClassRule;
 import it.gov.pagopa.bpd.common.connector.BaseFeignRestClientTest;
 import it.gov.pagopa.bpd.notification_manager.connector.award_period.config.AwardPeriodRestConnectorConfig;
 import it.gov.pagopa.bpd.notification_manager.connector.award_period.model.AwardPeriod;
-import junit.framework.TestCase;
 import lombok.SneakyThrows;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -16,11 +15,9 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.support.TestPropertySourceUtils;
 
-import java.time.OffsetDateTime;
 import java.util.List;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @TestPropertySource(
@@ -49,7 +46,7 @@ public class AwardPeriodRestClientTest extends BaseFeignRestClientTest {
     @Test
     public void findActives() {
 
-        final List<AwardPeriod> actualResponse = restClient.findActiveAwardPeriods();
+        final List<AwardPeriod> actualResponse = restClient.findAllAwardPeriods();
         assertNotNull(actualResponse);
     }
 
