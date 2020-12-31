@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
+import java.io.IOException;
+
 /**
  * Controller to expose MicroService
  */
@@ -21,4 +23,8 @@ public interface BpdNotificationManagerController {
     @GetMapping(value = "/notify", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
     void notifyUnset();
+
+    @GetMapping(value = "/test", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    void testConnection() throws IOException;
 }
