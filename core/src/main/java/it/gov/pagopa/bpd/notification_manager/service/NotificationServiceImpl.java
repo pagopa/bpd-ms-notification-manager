@@ -287,5 +287,22 @@ class NotificationServiceImpl extends BaseService implements NotificationService
         }
     }
 
+    @Override
+    public void testConnection() throws IOException {
+        Path tempDir = Files.createTempDirectory("test_temp");
+        File testFile = new File(tempDir + File.separator + "test.txt");
+        FileOutputStream outputFOS = new FileOutputStream(testFile.getAbsolutePath());
+        List<String> dataLines = new ArrayList<>();
+        dataLines.add("test");
+        try (PrintWriter pw = new PrintWriter(testFile)) {
+            dataLines.forEach(pw::println);
+        }
+
+        File fileToSend = new File(testFile.getAbsolutePath());
+
+        logger.info("Sending test file");
+        winnersSftpConnector.sendFile(fileToSend);
+        logger.info("Sent test file");
+    }
 }
 
