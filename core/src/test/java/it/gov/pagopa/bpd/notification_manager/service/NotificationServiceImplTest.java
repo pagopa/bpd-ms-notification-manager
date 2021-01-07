@@ -149,7 +149,7 @@ public class NotificationServiceImplTest {
         notificationService.findWinners();
 
         verify(citizenDAOMock).findWinners(2L);
-        verify(winnersSftpConnectorMock, only()).sendFile(Mockito.any(File.class));
+        verify(winnersSftpConnectorMock, times(2)).sendFile(Mockito.any(File.class));
         verify(awardPeriodRestClientMock, only()).findAllAwardPeriods();
 
     }
