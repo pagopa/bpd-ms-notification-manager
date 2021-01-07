@@ -214,18 +214,17 @@ class NotificationServiceImpl extends BaseService implements NotificationService
 
                         n++;
 
-//                        La causale varia a seconda dell'esito sul controllo dell'intestatario dello strumento di pagamento
-                        String paymentReason = (winner.getAccountHolderFiscalCode().equals(winner.getFiscalCode())) ?
-                                (nineDigits.format(winner.getId()) +
+                        // La causale varia a seconda dell'esito sul controllo dell'intestatario dello strumento di pagamento
+                        String paymentReason = winner.getFiscalCode().equals(winner.getAccountHolderFiscalCode()) ?
+                                nineDigits.format(winner.getId()) +
                                         " - Cashback di Stato - dal "
                                         + winner.getAwardPeriodStart().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) +
-                                        " al " + winner.getAwardPeriodEnd().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))) :
-                                (nineDigits.format(winner.getId()) +
+                                        " al " + winner.getAwardPeriodEnd().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) :
+                                nineDigits.format(winner.getId()) +
                                         " - Cashback di Stato - dal " +
                                         winner.getAwardPeriodStart().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) +
                                         " al " + winner.getAwardPeriodEnd().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) +
-                                        " - " + winner.getFiscalCode());
-
+                                        " - " + winner.getFiscalCode();
 
                         StringBuilder sb = new StringBuilder()
                                 .append(nineDigits.format(winner.getId()))
