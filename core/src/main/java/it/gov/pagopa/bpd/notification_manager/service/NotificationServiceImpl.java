@@ -13,6 +13,7 @@ import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.WinningCitizen
 import it.gov.pagopa.bpd.notification_manager.encryption.EncryptUtil;
 import it.gov.pagopa.bpd.notification_manager.mapper.NotificationDtoMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.annotations.Type;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -113,14 +114,27 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     }
 
     @Override
-    @Scheduled(cron = "${core.NotificationService.updateRankingAndWinners.scheduler}")
-    public void updateRankingAndWinners() {
+    @Scheduled(cron = "${core.NotificationService.updateRanking.scheduler}")
+    public void updateRanking() {
         if (logger.isInfoEnabled()) {
             logger.info("Executing procedure: updateRanking");
         }
-        citizenDAO.updateRankingAndWinners();
+        citizenDAO.updateRanking();
         if (logger.isInfoEnabled()) {
             logger.info("Executed procedure: updateRanking");
+        }
+
+    }
+
+    @Override
+    @Scheduled(cron = "${core.NotificationService.updateWinners.scheduler}")
+    public void updateWinners() {
+        if (logger.isInfoEnabled()) {
+            logger.info("Executing procedure: updateWinners");
+        }
+        citizenDAO.updateWinners();
+        if (logger.isInfoEnabled()) {
+            logger.info("Executed procedure: updateWinners");
         }
 
     }
