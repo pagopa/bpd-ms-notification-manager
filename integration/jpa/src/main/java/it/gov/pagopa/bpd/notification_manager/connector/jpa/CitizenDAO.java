@@ -3,9 +3,7 @@ package it.gov.pagopa.bpd.notification_manager.connector.jpa;
 
 import it.gov.pagopa.bpd.common.connector.jpa.CrudJpaDAO;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.WinningCitizen;
-import org.hibernate.annotations.Type;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.jpa.repository.query.Procedure;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -23,7 +21,7 @@ public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long>{
     @Query(nativeQuery = true, value = "SELECT 1 from update_bpd_award_winner()")
     void updateWinners();
 
-    @Query("SELECT a FROM WinningCitizen a WHERE a.awardPeriodId = :awardPeriodId and a.enabled = true")
+    @Query("SELECT a FROM WinningCitizen a WHERE a.awardPeriodId = :awardPeriodId AND a.enabled = true AND a.payoffInstr IS NOT NULL")
     List<WinningCitizen> findWinners(@Param("awardPeriodId") Long awardPeriodId);
 
 }
