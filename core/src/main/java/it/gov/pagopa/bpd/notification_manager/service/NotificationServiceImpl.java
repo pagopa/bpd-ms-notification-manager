@@ -13,7 +13,7 @@ import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.WinningCitizen
 import it.gov.pagopa.bpd.notification_manager.encryption.EncryptUtil;
 import it.gov.pagopa.bpd.notification_manager.mapper.NotificationDtoMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.annotations.Type;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -174,12 +174,6 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                     DecimalFormat twoDigits = new DecimalFormat("00");
                     DecimalFormat sixDigits = new DecimalFormat("000000");
 
-                    List<WinningCitizen> winnersForCSV = new ArrayList<>();
-                    for (WinningCitizen winningCitizen : winners) {
-                        if (winningCitizen.getPayoffInstr() != null && !winningCitizen.getPayoffInstr().isEmpty())
-                            winnersForCSV.add(winningCitizen);
-                    }
-
                     List<String> dataLines = new ArrayList<>();
                     int m = 0;
                     int n = 0;
@@ -194,7 +188,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                             + LocalDate.now().format(DateTimeFormatter.ofPattern("ddMMyyyy")) + "."
                             + LocalTime.now().format(DateTimeFormatter.ofPattern("HHmmss")) + ".";
 
-                    String totalFileNumber = twoDigits.format((int) Math.ceil((double) winnersForCSV.size() / maxRow));
+                    String totalFileNumber = twoDigits.format((int) Math.ceil((double) winners.size() / maxRow));
                     String currentFileNumber = null;
 
                     String fileName = null;
@@ -204,7 +198,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                     List<WinningCitizen> winnersToUpdate = new ArrayList<>();
 
 //                    Viene creata una riga nel csv per ogni vincitore
-                    for (WinningCitizen winnerForCSV : winnersForCSV) {
+                    for (WinningCitizen winner : winners) {
 
                         if (!initLoop) {
                             m++;
@@ -212,8 +206,8 @@ class NotificationServiceImpl extends BaseService implements NotificationService
 
                             fileName = filenamePrefix
                                     + currentFileNumber + "_" + totalFileNumber + "."
-                                    + String.valueOf((winnersForCSV.size() <= maxRow ? winnersForCSV.size() :
-                                    ((int) Math.ceil(((double) winnersForCSV.size() / maxRow)) > m ? maxRow : winnersForCSV.size() % maxRow)))
+                                    + String.valueOf((winners.size() <= maxRow ? winners.size() :
+                                    ((int) Math.ceil(((double) winners.size() / maxRow)) > m ? maxRow : winners.size() % maxRow)))
                                     + ".csv";
                             initLoop = true;
                         }
@@ -221,47 +215,62 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                         n++;
 
 //                        La causale varia a seconda dell'esito sul controllo dell'intestatario dello strumento di pagamento
-                        String paymentReason = (winnerForCSV.getAccountHolderFiscalCode().equals(winnerForCSV.getFiscalCode())) ?
-                                (nineDigits.format(winnerForCSV.getId()) +
+                        String paymentReason = (winner.getAccountHolderFiscalCode().equals(winner.getFiscalCode())) ?
+                                (nineDigits.format(winner.getId()) +
                                         " - Cashback di Stato - dal "
-                                        + winnerForCSV.getAwardPeriodStart().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) +
-                                        " al " + winnerForCSV.getAwardPeriodEnd().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))) :
-                                (nineDigits.format(winnerForCSV.getId()) +
+                                        + winner.getAwardPeriodStart().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) +
+                                        " al " + winner.getAwardPeriodEnd().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))) :
+                                (nineDigits.format(winner.getId()) +
                                         " - Cashback di Stato - dal " +
-                                        winnerForCSV.getAwardPeriodStart().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) +
-                                        " al " + winnerForCSV.getAwardPeriodEnd().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) +
-                                        " - " + winnerForCSV.getFiscalCode());
+                                        winner.getAwardPeriodStart().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) +
+                                        " al " + winner.getAwardPeriodEnd().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) +
+                                        " - " + winner.getFiscalCode());
 
-                        String sb = nineDigits.format(winnerForCSV.getId()) + DELIMITER +
-                                winnerForCSV.getAccountHolderFiscalCode() + DELIMITER +
-                                winnerForCSV.getPayoffInstr() + DELIMITER +
-                                winnerForCSV.getAccountHolderName() + DELIMITER +
-                                winnerForCSV.getAccountHolderSurname() + DELIMITER +
-                                sixDigits.format(winnerForCSV.getAmount()) + DELIMITER +
-                                paymentReason + DELIMITER +
-                                winnerForCSV.getTypology() + DELIMITER +
-                                twoDigits.format(winnerForCSV.getAwardPeriodId()) + DELIMITER +
-                                winnerForCSV.getAwardPeriodStart().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + DELIMITER +
-                                winnerForCSV.getAwardPeriodEnd().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + DELIMITER +
-                                sixDigits.format(winnerForCSV.getCashback()) + DELIMITER +
-                                sixDigits.format(winnerForCSV.getJackpot()) + DELIMITER +
-                                winnerForCSV.getCheckInstrStatus() + DELIMITER +
-                                winnerForCSV.getTechnicalAccountHolder();
-                        dataLines.add(sb);
 
-                        winnerForCSV.setChunkFilename(fileName);
-                        winnerForCSV.setStatus(WinningCitizen.Status.SEND);
+                        StringBuilder sb = new StringBuilder()
+                                .append(nineDigits.format(winner.getId()))
+                                .append(DELIMITER)
+                                .append(winner.getAccountHolderFiscalCode())
+                                .append(DELIMITER)
+                                .append(winner.getPayoffInstr())
+                                .append(DELIMITER)
+                                .append(winner.getAccountHolderName())
+                                .append(DELIMITER)
+                                .append(winner.getAccountHolderSurname())
+                                .append(DELIMITER)
+                                .append(sixDigits.format(winner.getAmount()))
+                                .append(DELIMITER)
+                                .append(paymentReason)
+                                .append(DELIMITER)
+                                .append(winner.getTypology())
+                                .append(DELIMITER)
+                                .append(twoDigits.format(winner.getAwardPeriodId()))
+                                .append(DELIMITER)
+                                .append(winner.getAwardPeriodStart().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
+                                .append(DELIMITER)
+                                .append(winner.getAwardPeriodEnd().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
+                                .append(DELIMITER)
+                                .append(sixDigits.format(winner.getCashback()))
+                                .append(DELIMITER)
+                                .append(sixDigits.format(winner.getJackpot()))
+                                .append(DELIMITER)
+                                .append(winner.getCheckInstrStatus())
+                                .append(DELIMITER)
+                                .append(winner.getTechnicalAccountHolder());
+                        dataLines.add(sb.toString());
 
-                        winnersToUpdate.add(winnerForCSV);
-                        if (winnersToUpdate.size() == maxRecordToSave || n == winnersForCSV.size()) {
+                        winner.setChunkFilename(fileName);
+                        winner.setStatus(WinningCitizen.Status.SEND);
+
+                        winnersToUpdate.add(winner);
+                        if (winnersToUpdate.size() == maxRecordToSave || n == winners.size()) {
                             citizenDAO.saveAll(winnersToUpdate);
                             winnersToUpdate.clear();
                         }
 
-
 //                        Se il csv ha raggiunto il numero massimo di righe stabilito si procede con la fase di
 //                        encrypt e invio, i vincitori restanti verranno registrati su altri csv
-                        if (dataLines.size() == maxRow || n == winnersForCSV.size()) {
+                        if (dataLines.size() == maxRow || n == winners.size()) {
 
 //                            Il file verrà creato in una directory temporanea
                             File csvOutputFile = new File(fileName);
@@ -269,24 +278,20 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                                 dataLines.forEach(pw::println);
                             }
 
+                            File csvChecksumOutputFile = createChecksumFile(fileName);
+
 //                            Il file CSV viene criptato e depositato nella stessa directory temporanea
                             String publicKeyWithLineBreaks = publicKey.replace("\\n", System.lineSeparator());
                             InputStream publicKeyIS = new ByteArrayInputStream(publicKeyWithLineBreaks.getBytes());
-                            FileOutputStream outputFOS = new FileOutputStream(csvOutputFile.getAbsolutePath().concat(".pgp"));
+                            String csvPgpFileName = fileName.concat(".pgp");
+                            FileOutputStream outputFOS = new FileOutputStream(csvPgpFileName);
                             EncryptUtil.encryptFile(outputFOS,
                                     csvOutputFile.getAbsolutePath(),
                                     EncryptUtil.readPublicKey(publicKeyIS),
                                     false, true);
+                            File csvPgpFile = new File(csvPgpFileName);
 
-
-//                            Il file viene infine inviato su SFTP SIA
-                            logger.info("Sending File: " + csvOutputFile.getName().concat(".pgp"));
-                            File csvPgpFile = new File(csvOutputFile.getAbsolutePath().concat(".pgp"));
-                            winnersSftpConnector.sendFile(csvPgpFile);
-                            if (logger.isInfoEnabled()) {
-                                logger.info("NotificationManagerServiceImpl.findWinners");
-                                logger.info("Sent File: " + csvPgpFile.getName());
-                            }
+                            sendFiles(csvPgpFile, csvChecksumOutputFile);
                             dataLines.clear();
 
                             initLoop = false;
@@ -300,6 +305,34 @@ class NotificationServiceImpl extends BaseService implements NotificationService
             }
         }
     }
+
+
+    private void sendFiles(File... files) {
+        for (File file : files) {
+
+            if (logger.isInfoEnabled()) {
+                logger.info("Sending File: " + file.getName());
+            }
+
+            winnersSftpConnector.sendFile(file);
+
+            if (logger.isInfoEnabled()) {
+                logger.info("Sent File: " + file.getName());
+            }
+        }
+    }
+
+
+    private File createChecksumFile(String fileName) throws IOException {
+        String checksum = DigestUtils.sha256Hex(new FileInputStream(fileName));
+        File csvChecksumOutputFile = new File(fileName.replace(".csv", ".sha256sum"));
+        try (PrintWriter pw = new PrintWriter(csvChecksumOutputFile)) {
+            pw.println(checksum);
+        }
+
+        return csvChecksumOutputFile;
+    }
+
 
     @Override
     public void testConnection() throws IOException {
@@ -318,5 +351,6 @@ class NotificationServiceImpl extends BaseService implements NotificationService
         winnersSftpConnector.sendFile(fileToSend);
         logger.info("Sent test file");
     }
+
 }
 
