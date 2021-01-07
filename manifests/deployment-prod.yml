@@ -30,6 +30,13 @@ spec:
                 name: bpdmsnotificationmanager
             - configMapRef:
                 name: jvm
+          resources:
+            limits:
+              cpu: 800m
+              memory: 6Gi
+            requests:
+              cpu: 50m
+              memory: 256Mi
       hostAliases:
         - hostnames:
             - u87cstarprod.servicebus.windows.net
