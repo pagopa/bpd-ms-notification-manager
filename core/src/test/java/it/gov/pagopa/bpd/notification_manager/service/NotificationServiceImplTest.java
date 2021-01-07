@@ -112,9 +112,17 @@ public class NotificationServiceImplTest {
     @Test
     public void testUpdateRanking() throws IOException {
 
-        notificationService.updateRankingAndWinners();
-        verify(citizenDAOMock, only()).updateRankingAndWinners();
-        verify(citizenDAOMock, times(1)).updateRankingAndWinners();
+        notificationService.updateRanking();
+        verify(citizenDAOMock, only()).updateRanking();
+        verify(citizenDAOMock, times(1)).updateRanking();
+    }
+
+    @Test
+    public void testUpdateWinners() throws IOException {
+
+        notificationService.updateWinners();
+        verify(citizenDAOMock, only()).updateWinners();
+        verify(citizenDAOMock, times(1)).updateWinners();
     }
 
     @Test
