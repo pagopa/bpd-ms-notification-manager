@@ -99,7 +99,7 @@ public class NotificationServiceImplTest {
     }
 
     @Test
-    public void testSendWinnersEndingPeriod() {
+    public void testSendWinnersEndingPeriod() throws IOException {
 
         BDDMockito.when(awardPeriodRestClientMock.findAllAwardPeriods())
                 .thenAnswer(invocation -> {
@@ -127,7 +127,7 @@ public class NotificationServiceImplTest {
     }
 
     @Test
-    public void testSendWinners() {
+    public void testSendWinners() throws IOException {
 
         BDDMockito.when(awardPeriodRestClientMock.findAllAwardPeriods())
                 .thenAnswer(invocation -> {
