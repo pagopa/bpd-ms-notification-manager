@@ -27,12 +27,9 @@ public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long> {
                     " WHERE baw.award_period_id_n = :awardPeriodId" +
                     " AND baw.enabled_b = true" +
                     " AND baw.payoff_instr_s IS NOT NULL" +
-                    " AND a.status <> 'SENT'" +
-                    " ORDER BY baw.id_n" +
-                    " OFFSET :offset" +
+                    " AND baw.status_s <> 'SENT'" +
                     " LIMIT :limit")
     List<WinningCitizen> findWinners(@Param("awardPeriodId") Long awardPeriodId,
-                                     @Param("offset") Long offset,
                                      @Param("limit") Long limit);
 
 }
