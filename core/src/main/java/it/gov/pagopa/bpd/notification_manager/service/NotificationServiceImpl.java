@@ -105,10 +105,12 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     @Scheduled(cron = "${core.NotificationService.updateRankingAndFindWinners.scheduler}")
     public void updateRankingAndWinners() {
         if (logger.isInfoEnabled()) {
-            logger.info("NotificationManagerServiceImpl.updateRankingAndWinners");
-            logger.info("Executing procedure: updateRankingAndWinners");
+            logger.info("Executing procedure: NotificationManagerServiceImpl.updateRankingAndWinners");
         }
         citizenDAO.updateRankingAndWinners();
+        if (logger.isInfoEnabled()) {
+            logger.info("Executed procedure: NotificationManagerServiceImpl.updateRankingAndWinners");
+        }
     }
 
     @Override
