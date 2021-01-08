@@ -14,6 +14,7 @@ import org.junit.runner.RunWith;
 import org.mockito.BDDMockito;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
@@ -36,10 +37,13 @@ import java.util.List;
 import static org.mockito.Mockito.*;
 
 @RunWith(SpringRunner.class)
-@TestPropertySource(locations = "classpath:config/notificationService.properties")
+@TestPropertySource(locations = "classpath:config/notificationService.properties",
+        properties = "core.NotificationService.findWinners.maxRow=5")
 @ContextConfiguration(classes = NotificationServiceImpl.class)
 public class NotificationServiceImplTest {
 
+    @Value("${core.NotificationService.findWinners.maxRow}")
+    private Long maxRow;
 
     @MockBean
     private NotificationRestConnector restConnector;
@@ -59,44 +63,10 @@ public class NotificationServiceImplTest {
     @MockBean
     private WinnersSftpConnector winnersSftpConnectorMock;
 
-    @PostConstruct
-    public void configureMock() {
-        BDDMockito.when(restConnector.notify(Mockito.any(NotificationDTO.class)))
-                .thenAnswer(invocation -> {
-                    NotificationResource result = new NotificationResource();
-                    result.setId("ok");
-                    return result;
-                });
-        BDDMockito.when(citizenDAOMock.findFiscalCodesWithUnsetPayoffInstr())
-                .thenAnswer(invocation -> {
-                    ArrayList<String> result = new ArrayList<>();
-                    result.add("CF1");
-                    result.add("CF2");
-                    result.add("CF3");
-                    return result;
-                });
-
-        BDDMockito.when(citizenDAOMock.findWinners(Mockito.any(Long.class)))
-                .thenAnswer(invocation -> {
-                    List<WinningCitizen> result = new ArrayList<>();
-                    WinningCitizen winner1 = new WinningCitizen();
-                    winner1.setAwardPeriodId(2L);
-                    winner1.setPayoffInstr("test");
-                    winner1.setFiscalCode("test");
-                    winner1.setAccountHolderFiscalCode("test");
-                    winner1.setAccountHolderName("test");
-                    winner1.setAccountHolderSurname("test");
-                    winner1.setCheckInstrStatus("01");
-                    winner1.setId(1L);
-                    winner1.setAwardPeriodStart(LocalDate.now());
-                    winner1.setAwardPeriodEnd(LocalDate.now());
-                    winner1.setAmount(new BigDecimal("124567890.0987654321"));
-                    winner1.setCashback(new BigDecimal("124567890.0987654321"));
-                    winner1.setJackpot(new BigDecimal("124567890.0987654321"));
-                    winner1.setTypology("01");
-                    result.add(winner1);
-                    return result;
-                });
+    static String readFile(String path, Charset encoding)
+            throws IOException {
+        byte[] encoded = Files.readAllBytes(Paths.get(path));
+        return new String(encoded, encoding);
     }
 
     @Test
@@ -125,8 +95,75 @@ public class NotificationServiceImplTest {
         verify(citizenDAOMock, times(1)).updateWinners();
     }
 
+    @PostConstruct
+    public void configureMock() {
+        BDDMockito.when(restConnector.notify(Mockito.any(NotificationDTO.class)))
+                .thenAnswer(invocation -> {
+                    NotificationResource result = new NotificationResource();
+                    result.setId("ok");
+                    return result;
+                });
+        BDDMockito.when(citizenDAOMock.findFiscalCodesWithUnsetPayoffInstr())
+                .thenAnswer(invocation -> {
+                    ArrayList<String> result = new ArrayList<>();
+                    result.add("CF1");
+                    result.add("CF2");
+                    result.add("CF3");
+                    return result;
+                });
+
+        BDDMockito.when(citizenDAOMock.findWinners(Mockito.any(Long.class), Mockito.any(Long.class), Mockito.any(Long.class)))
+                .thenAnswer(invocation -> {
+                    List<WinningCitizen> result = new ArrayList<>();
+
+                    Long offset = invocation.getArgument(1, Long.class);
+                    Long limit = invocation.getArgument(2, Long.class);
+
+                    if (offset == 0) {
+                        for (int i = 0; i < maxRow; i++) {
+                            WinningCitizen winner1 = new WinningCitizen();
+                            winner1.setAwardPeriodId(2L);
+                            winner1.setPayoffInstr("test" + i);
+                            winner1.setFiscalCode("test" + i);
+                            winner1.setAccountHolderFiscalCode("test" + i);
+                            winner1.setAccountHolderName("test" + i);
+                            winner1.setAccountHolderSurname("test" + i);
+                            winner1.setCheckInstrStatus("01");
+                            winner1.setId((long) i);
+                            winner1.setAwardPeriodStart(LocalDate.now());
+                            winner1.setAwardPeriodEnd(LocalDate.now());
+                            winner1.setAmount(new BigDecimal("124567890.0987654321"));
+                            winner1.setCashback(new BigDecimal("124567890.0987654321"));
+                            winner1.setJackpot(new BigDecimal("124567890.0987654321"));
+                            winner1.setTypology("01");
+                            result.add(winner1);
+                        }
+
+                    } else {
+                        WinningCitizen winner1 = new WinningCitizen();
+                        winner1.setAwardPeriodId(2L);
+                        winner1.setPayoffInstr("test");
+                        winner1.setFiscalCode("test");
+                        winner1.setAccountHolderFiscalCode("test-different");
+                        winner1.setAccountHolderName("test");
+                        winner1.setAccountHolderSurname("test");
+                        winner1.setCheckInstrStatus("01");
+                        winner1.setId(1L);
+                        winner1.setAwardPeriodStart(LocalDate.now());
+                        winner1.setAwardPeriodEnd(LocalDate.now());
+                        winner1.setAmount(new BigDecimal("124567890.0987654321"));
+                        winner1.setCashback(new BigDecimal("124567890.0987654321"));
+                        winner1.setJackpot(new BigDecimal("124567890.0987654321"));
+                        winner1.setTypology("01");
+                        result.add(winner1);
+                    }
+
+                    return result;
+                });
+    }
+
     @Test
-    public void testFindWinnersEndingPeriod(){
+    public void testFindWinnersEndingPeriod() {
 
         BDDMockito.when(awardPeriodRestClientMock.findAllAwardPeriods())
                 .thenAnswer(invocation -> {
@@ -146,16 +183,16 @@ public class NotificationServiceImplTest {
                     return result;
                 });
 
-        notificationService.findWinners();
+        notificationService.sendWinners();
 
-        verify(citizenDAOMock).findWinners(2L);
-        verify(winnersSftpConnectorMock, times(2)).sendFile(Mockito.any(File.class));
+        verify(citizenDAOMock, times(2)).findWinners(Mockito.any(Long.class), Mockito.any(Long.class), Mockito.any(Long.class));
+        verify(winnersSftpConnectorMock, times(2 * 2)).sendFile(Mockito.any(File.class));
         verify(awardPeriodRestClientMock, only()).findAllAwardPeriods();
 
     }
 
     @Test
-    public void testFindWinners(){
+    public void testFindWinners() {
 
         BDDMockito.when(awardPeriodRestClientMock.findAllAwardPeriods())
                 .thenAnswer(invocation -> {
@@ -175,19 +212,13 @@ public class NotificationServiceImplTest {
                     return result;
                 });
 
-        notificationService.findWinners();
+        notificationService.sendWinners();
 
         verifyZeroInteractions(citizenDAOMock, winnersSftpConnectorMock);
         verify(awardPeriodRestClientMock, only()).findAllAwardPeriods();
 
     }
 
-    static String readFile(String path, Charset encoding)
-            throws IOException
-    {
-        byte[] encoded = Files.readAllBytes(Paths.get(path));
-        return new String(encoded, encoding);
-    }
     static {
         try {
             String publicKey = readFile("src/test/resources/test_pgp/test", StandardCharsets.US_ASCII);

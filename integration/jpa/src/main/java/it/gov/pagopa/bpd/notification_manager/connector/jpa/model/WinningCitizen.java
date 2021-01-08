@@ -68,6 +68,6 @@ public class WinningCitizen extends BaseEntity {
     private Status status;
 
     public enum Status {
-        NEW, SEND, RECOVERY
+        NEW, SENT, RECOVERY
     }
 }

@@ -23,8 +23,8 @@ class BpdNotificationManagerControllerImpl extends StatelessController implement
     }
 
     @Override
-    public void findWinners() {
-        notificationService.findWinners();
+    public void sendWinners() {
+        notificationService.sendWinners();
 
     }
 
