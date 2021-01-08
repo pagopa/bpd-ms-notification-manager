@@ -25,7 +25,7 @@ public interface BpdNotificationManagerController {
     @ResponseStatus(HttpStatus.OK)
     void notifyUnset();
 
-    @GetMapping(value = "/test", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @PostMapping(value = "/test", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
     void testConnection() throws IOException;
 }
