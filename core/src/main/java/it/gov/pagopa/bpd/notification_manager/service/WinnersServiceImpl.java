@@ -45,6 +45,7 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
     private final String authorityType;
     private final String fileType;
     private final String publicKey;
+    private final boolean sftpEnable;
 
     @Autowired
     WinnersServiceImpl(
@@ -55,7 +56,8 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
             @Value("${core.NotificationService.findWinners.serviceName}") String serviceName,
             @Value("${core.NotificationService.findWinners.authorityType}") String authorityType,
             @Value("${core.NotificationService.findWinners.fileType}") String fileType,
-            @Value("${core.NotificationService.findWinners.publicKey}") String publicKey) {
+            @Value("${core.NotificationService.findWinners.publicKey}") String publicKey,
+            @Value("${core.NotificationService.findWinners.sftp.enable}") boolean sftpEnable) {
         this.citizenDAO = citizenDAO;
         this.winnersSftpConnector = winnersSftpConnector;
         CSV_DELIMITER = delimiter;
@@ -64,12 +66,22 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
         this.authorityType = authorityType;
         this.fileType = fileType;
         this.publicKey = publicKey;
+        this.sftpEnable = sftpEnable;
     }
 
 
     @Override
     @Transactional
     public int sendWinners(Long endingPeriodId, int fileChunkCount, Path tempDir) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("WinnersServiceImpl.sendWinners start");
+        }
+        if (tempDir == null) {
+            throw new IllegalArgumentException("tempDir cannot be null");
+        }
+
+        int result = -1;
+
         if (logger.isInfoEnabled()) {
             logger.info(String.format("Starting findWinners query with limit = %d", maxRow));
         }
@@ -83,31 +95,27 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
                 logger.info("Winners found");
             }
 
+            String filenamePrefix = tempDir + File.separator
+                    + serviceName + "."
+                    + authorityType + "."
+                    + fileType + "."
+                    + LocalDate.now().format(DateTimeFormatter.ofPattern("ddMMyyyy")) + "."
+                    + LocalTime.now().format(DateTimeFormatter.ofPattern("HHmmss")) + ".";
+
+            String totalFileNumber = TWO_DIGITS_FORMAT.format((int) Math.ceil((double) winners.size() / maxRow));
+            String currentFileNumber = TWO_DIGITS_FORMAT.format(fileChunkCount);
+
+            String fileName = filenamePrefix
+                    + currentFileNumber + "_" + totalFileNumber + "."
+                    + (winners.size() <= maxRow ? winners.size() :
+                    ((int) Math.ceil(((double) winners.size() / maxRow)) > fileChunkCount ? maxRow : winners.size() % maxRow))
+                    + ".csv";
+
+            if (logger.isInfoEnabled()) {
+                logger.info(String.format("Creating file %s", fileName));
+            }
+
             try {
-
-                if (tempDir == null) {
-                    tempDir = Files.createTempDirectory("csv_directory");
-                }
-
-                if (logger.isInfoEnabled()) {
-                    logger.info("temporaryDirectoryPath = " + tempDir.toAbsolutePath().toString());
-                }
-
-                String filenamePrefix = tempDir + File.separator
-                        + serviceName + "."
-                        + authorityType + "."
-                        + fileType + "."
-                        + LocalDate.now().format(DateTimeFormatter.ofPattern("ddMMyyyy")) + "."
-                        + LocalTime.now().format(DateTimeFormatter.ofPattern("HHmmss")) + ".";
-
-                String totalFileNumber = TWO_DIGITS_FORMAT.format((int) Math.ceil((double) winners.size() / maxRow));
-                String currentFileNumber = TWO_DIGITS_FORMAT.format(fileChunkCount);
-
-                String fileName = filenamePrefix
-                        + currentFileNumber + "_" + totalFileNumber + "."
-                        + (winners.size() <= maxRow ? winners.size() :
-                        ((int) Math.ceil(((double) winners.size() / maxRow)) > fileChunkCount ? maxRow : winners.size() % maxRow))
-                        + ".csv";
                 File csvOutputFile = new File(fileName);
                 PrintWriter csvPrintWriter = new PrintWriter(csvOutputFile);
 
@@ -123,14 +131,22 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
                 File csvChecksumOutputFile = createChecksumFile(csvOutputFile);
                 File csvPgpFile = cryptFile(csvOutputFile);
                 citizenDAO.saveAll(winners);
-                sendFiles(csvPgpFile, csvChecksumOutputFile);
+                if (sftpEnable) {
+                    sendFiles(csvPgpFile, csvChecksumOutputFile);
+                }
 
-            } catch (Exception e) {
+            } catch (IOException | NoSuchProviderException | PGPException e) {
                 throw new RuntimeException(e);
             }
+
+            result = winners.size();
         }
 
-        return winners.size();
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("WinnersServiceImpl.sendWinners end with %d processed records", result));
+        }
+
+        return result;
     }
 
 
@@ -148,41 +164,41 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
                     .append(winner.getFiscalCode());
         }
 
-        StringBuilder csvRowBuilder = new StringBuilder()
-                .append(NINE_DIGITS_FORMAT.format(winner.getId()))
-                .append(CSV_DELIMITER)
-                .append(winner.getAccountHolderFiscalCode())
-                .append(CSV_DELIMITER)
-                .append(winner.getPayoffInstr())
-                .append(CSV_DELIMITER)
-                .append(winner.getAccountHolderName())
-                .append(CSV_DELIMITER)
-                .append(winner.getAccountHolderSurname())
-                .append(CSV_DELIMITER)
-                .append(SIX_DIGITS_FORMAT.format(winner.getAmount()))
-                .append(CSV_DELIMITER)
-                .append(paymentReasonBuilder.toString())
-                .append(CSV_DELIMITER)
-                .append(winner.getTypology())
-                .append(CSV_DELIMITER)
-                .append(TWO_DIGITS_FORMAT.format(winner.getAwardPeriodId()))
-                .append(CSV_DELIMITER)
-                .append(winner.getAwardPeriodStart().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
-                .append(CSV_DELIMITER)
-                .append(winner.getAwardPeriodEnd().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
-                .append(CSV_DELIMITER)
-                .append(SIX_DIGITS_FORMAT.format(winner.getCashback()))
-                .append(CSV_DELIMITER)
-                .append(SIX_DIGITS_FORMAT.format(winner.getJackpot()))
-                .append(CSV_DELIMITER)
-                .append(winner.getCheckInstrStatus())
-                .append(CSV_DELIMITER)
-                .append(winner.getTechnicalAccountHolder());
-
-        return csvRowBuilder.toString();
+        return NINE_DIGITS_FORMAT.format(winner.getId()) +
+                CSV_DELIMITER +
+                winner.getAccountHolderFiscalCode() +
+                CSV_DELIMITER +
+                winner.getPayoffInstr() +
+                CSV_DELIMITER +
+                winner.getAccountHolderName() +
+                CSV_DELIMITER +
+                winner.getAccountHolderSurname() +
+                CSV_DELIMITER +
+                SIX_DIGITS_FORMAT.format(winner.getAmount()) +
+                CSV_DELIMITER +
+                paymentReasonBuilder.toString() +
+                CSV_DELIMITER +
+                winner.getTypology() +
+                CSV_DELIMITER +
+                TWO_DIGITS_FORMAT.format(winner.getAwardPeriodId()) +
+                CSV_DELIMITER +
+                winner.getAwardPeriodStart().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) +
+                CSV_DELIMITER +
+                winner.getAwardPeriodEnd().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) +
+                CSV_DELIMITER +
+                SIX_DIGITS_FORMAT.format(winner.getCashback()) +
+                CSV_DELIMITER +
+                SIX_DIGITS_FORMAT.format(winner.getJackpot()) +
+                CSV_DELIMITER +
+                winner.getCheckInstrStatus() +
+                CSV_DELIMITER +
+                winner.getTechnicalAccountHolder();
     }
 
     private File cryptFile(File csvOutputFile) throws IOException, NoSuchProviderException, PGPException {
+        if (logger.isDebugEnabled()) {
+            logger.debug("WinnersServiceImpl.cryptFile start");
+        }
         String publicKeyWithLineBreaks = publicKey.replace("\\n", System.lineSeparator());
         InputStream publicKeyIS = new ByteArrayInputStream(publicKeyWithLineBreaks.getBytes());
         File csvPgpFile = new File(csvOutputFile.getAbsolutePath().concat(".pgp"));
@@ -192,7 +208,11 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
                 EncryptUtil.readPublicKey(publicKeyIS),
                 false, true);
 
-        return csvOutputFile;
+        if (logger.isDebugEnabled()) {
+            logger.debug("WinnersServiceImpl.cryptFile end");
+        }
+
+        return csvPgpFile;
     }
 
 
@@ -213,10 +233,22 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
 
 
     private File createChecksumFile(File csvOutputFile) throws IOException {
-        String checksum = DigestUtils.sha256Hex(new FileInputStream(csvOutputFile));
+        if (logger.isDebugEnabled()) {
+            logger.debug("WinnersServiceImpl.createChecksumFile start");
+        }
+
+        String checksum;
+        try (InputStream csvFileInputStram = new FileInputStream(csvOutputFile)) {
+            checksum = DigestUtils.sha256Hex(csvFileInputStram);
+        }
+
         File csvChecksumOutputFile = new File(csvOutputFile.getAbsolutePath().replace(".csv", ".sha256sum"));
         try (PrintWriter pw = new PrintWriter(csvChecksumOutputFile)) {
             pw.println(checksum);
+        }
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("WinnersServiceImpl.createChecksumFile end");
         }
 
         return csvChecksumOutputFile;

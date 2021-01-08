@@ -14,7 +14,7 @@ public interface NotificationService {
 
     void updateWinners() throws IOException;
 
-    void sendWinners();
+    void sendWinners() throws IOException;
 
     void testConnection() throws IOException;
 

@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -86,8 +87,9 @@ public class WinnersServiceImplTest {
     }
 
     @Test
-    public void testSendWinnersWithResults() {
-        winnersService.sendWinners(0L, 0, null);
+    public void testSendWinnersWithResults() throws IOException {
+        Path tempDir = Files.createTempDirectory("csv_directory");
+        winnersService.sendWinners(0L, 0, tempDir);
 
         verify(citizenDAOMock, atLeastOnce()).findWinners(Mockito.any(Long.class), Mockito.any(Long.class));
         verify(winnersSftpConnectorMock, atLeastOnce()).sendFile(Mockito.any(File.class));
@@ -95,8 +97,9 @@ public class WinnersServiceImplTest {
     }
 
     @Test
-    public void testSendWinnersWithoutResults() {
-        winnersService.sendWinners(-1L, 0, null);
+    public void testSendWinnersWithoutResults() throws IOException {
+        Path tempDir = Files.createTempDirectory("csv_directory");
+        winnersService.sendWinners(-1L, 0, tempDir);
 
         verifyZeroInteractions(winnersSftpConnectorMock);
     }

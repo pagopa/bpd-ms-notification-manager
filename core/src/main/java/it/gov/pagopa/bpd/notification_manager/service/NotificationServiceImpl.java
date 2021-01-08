@@ -15,10 +15,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.Period;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -37,6 +40,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     private final String subject;
     private final String markdown;
     private final Long maxRow;
+    private final boolean deleteTmpFilesEnable;
 
     @Autowired
     NotificationServiceImpl(
@@ -48,7 +52,8 @@ class NotificationServiceImpl extends BaseService implements NotificationService
             @Value("${core.NotificationService.notifyUnsetPayoffInstr.ttl}") Long timeToLive,
             @Value("${core.NotificationService.notifyUnsetPayoffInstr.subject}") String subject,
             @Value("${core.NotificationService.notifyUnsetPayoffInstr.markdown}") String markdown,
-            @Value("${core.NotificationService.findWinners.maxRow}") Long maxRow) {
+            @Value("${core.NotificationService.findWinners.maxRow}") Long maxRow,
+            @Value("${core.NotificationService.findWinners.deleteTmpFiles.enable}") boolean deleteTmpFilesEnable) {
         this.citizenDAO = citizenDAO;
         this.notificationDtoMapper = notificationDtoMapper;
         this.notificationRestConnector = notificationRestConnector;
@@ -58,6 +63,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
         this.subject = subject;
         this.markdown = markdown;
         this.maxRow = maxRow;
+        this.deleteTmpFilesEnable = deleteTmpFilesEnable;
     }
 
 
@@ -117,45 +123,53 @@ class NotificationServiceImpl extends BaseService implements NotificationService
 
     @Override
     @Scheduled(cron = "${core.NotificationService.findWinners.scheduler}")
-    public void sendWinners() {
-        try {
+    public void sendWinners() throws IOException {
+        if (logger.isInfoEnabled()) {
+            logger.info("NotificationManagerServiceImpl.sendWinners start");
+        }
+
+        List<AwardPeriod> awardPeriods = awardPeriodRestClient.findAllAwardPeriods();
+
+        Long endingPeriodId = null;
+        for (AwardPeriod awardPeriod : awardPeriods) {
+            if (LocalDate.now().equals(awardPeriod.getEndDate()
+                    .plus(Period.ofDays(awardPeriod.getGracePeriod().intValue() + 1)))) {
+                endingPeriodId = awardPeriod.getAwardPeriodId();
+            }
+        }
+
+        if (endingPeriodId != null) {
+            int fileChunkCount = 0;
+            int fetchedRecord;
+
+            Path tempDir = Files.createTempDirectory("csv_directory");
             if (logger.isInfoEnabled()) {
-                logger.info("NotificationManagerServiceImpl.sendWinners start");
+                logger.info(String.format("temporaryDirectoryPath = %s", tempDir.toAbsolutePath().toString()));
             }
 
-            List<AwardPeriod> awardPeriods = awardPeriodRestClient.findAllAwardPeriods();
+            do {
+                fetchedRecord = winnersService.sendWinners(endingPeriodId, fileChunkCount, tempDir);
+                fileChunkCount++;
 
-            Long endingPeriodId = null;
-            for (AwardPeriod awardPeriod : awardPeriods) {
-                if (LocalDate.now().equals(awardPeriod.getEndDate()
-                        .plus(Period.ofDays(awardPeriod.getGracePeriod().intValue() + 1)))) {
-                    endingPeriodId = awardPeriod.getAwardPeriodId();
+            } while (fetchedRecord == maxRow);
+
+            if (deleteTmpFilesEnable) {
+                if (logger.isInfoEnabled()) {
+                    logger.info(String.format("Deleting %s", tempDir));
                 }
+                Files.walk(tempDir)
+                        .sorted(Comparator.reverseOrder())
+                        .map(Path::toFile)
+                        .forEach(File::delete);
             }
 
-            if (endingPeriodId != null) {
-                int fileChunkCount = 0;
-                int fetchedRecord;
-                Path tempDir = null;
+        }
 
-                do {
-                    fetchedRecord = winnersService.sendWinners(endingPeriodId, fileChunkCount, tempDir);
-                    fileChunkCount++;
-
-                } while (fetchedRecord == maxRow);
-            }
-
-            if (logger.isInfoEnabled()) {
-                logger.info("NotificationManagerServiceImpl.sendWinners end");
-            }
-
-        } catch (Exception e) {
-            if (logger.isErrorEnabled()) {
-                logger.error(e.getMessage(), e);
-            }
-            throw new RuntimeException(e);
+        if (logger.isInfoEnabled()) {
+            logger.info("NotificationManagerServiceImpl.sendWinners end");
         }
     }
+
 
     @Override
     public void testConnection() throws IOException {
