@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long>{
+public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long> {
 
     @Query(nativeQuery = true, value = "SELECT fiscal_code_s FROM bpd_citizen WHERE payoff_instr_s IS NULL")
     List<String> findFiscalCodesWithUnsetPayoffInstr();
@@ -21,7 +21,17 @@ public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long>{
     @Query(nativeQuery = true, value = "SELECT 1 from update_bpd_award_winner()")
     void updateWinners();
 
-    @Query("SELECT a FROM WinningCitizen a WHERE a.awardPeriodId = :awardPeriodId AND a.enabled = true AND a.payoffInstr IS NOT NULL")
-    List<WinningCitizen> findWinners(@Param("awardPeriodId") Long awardPeriodId);
+    @Query(nativeQuery = true,
+            value = "SELECT *" +
+                    " FROM bpd_award_winner baw" +
+                    " WHERE baw.award_period_id_n = :awardPeriodId" +
+                    " AND baw.enabled_b = true" +
+                    " AND baw.payoff_instr_s IS NOT NULL" +
+                    " AND a.status <> 'SENT'" +
+                    " OFFSET :offset" +
+                    " LIMIT :limit")
+    List<WinningCitizen> findWinners(@Param("awardPeriodId") Long awardPeriodId,
+                                     @Param("offset") Long offset,
+                                     @Param("limit") Long limit);
 
 }
