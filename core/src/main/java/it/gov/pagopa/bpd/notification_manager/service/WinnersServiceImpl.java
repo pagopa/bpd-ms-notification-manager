@@ -46,6 +46,7 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
     private final String fileType;
     private final String publicKey;
     private final boolean sftpEnable;
+    private final boolean updateStatusEnabled;
 
     @Autowired
     WinnersServiceImpl(
@@ -57,7 +58,8 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
             @Value("${core.NotificationService.findWinners.authorityType}") String authorityType,
             @Value("${core.NotificationService.findWinners.fileType}") String fileType,
             @Value("${core.NotificationService.findWinners.publicKey}") String publicKey,
-            @Value("${core.NotificationService.findWinners.sftp.enable}") boolean sftpEnable) {
+            @Value("${core.NotificationService.findWinners.sftp.enable}") boolean sftpEnable,
+            @Value("${core.NotificationService.findWinners.updateStatus.enable}") boolean updateStatusEnabled) {
         this.citizenDAO = citizenDAO;
         this.winnersSftpConnector = winnersSftpConnector;
         CSV_DELIMITER = delimiter;
@@ -67,6 +69,7 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
         this.fileType = fileType;
         this.publicKey = publicKey;
         this.sftpEnable = sftpEnable;
+        this.updateStatusEnabled = updateStatusEnabled;
     }
 
 
@@ -82,10 +85,19 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
 
         int result = -1;
 
-        if (logger.isInfoEnabled()) {
-            logger.info(String.format("Starting findWinners query with limit = %d", maxRow));
+        List<WinningCitizen> winners;
+        if (updateStatusEnabled) {
+            if (logger.isInfoEnabled()) {
+                logger.info(String.format("Starting findWinners query with limit = %d", maxRow));
+            }
+            winners = citizenDAO.findWinners(endingPeriodId, maxRow);
+        } else {
+            long offset = maxRow * fileChunkCount;
+            if (logger.isInfoEnabled()) {
+                logger.info(String.format("Starting findWinners query with offset %d and limit = %d", offset, maxRow));
+            }
+            winners = citizenDAO.findWinners(endingPeriodId, offset, maxRow);
         }
-        List<WinningCitizen> winners = citizenDAO.findWinners(endingPeriodId, maxRow);
         if (logger.isInfoEnabled()) {
             logger.info("Search for winners finished");
         }
@@ -123,14 +135,18 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
                     String csvRow = generateCsvRow(winner);
                     csvPrintWriter.println(csvRow);
 
-                    winner.setChunkFilename(fileName);
-                    winner.setStatus(WinningCitizen.Status.SENT);
+                    if (updateStatusEnabled) {
+                        winner.setChunkFilename(fileName);
+                        winner.setStatus(WinningCitizen.Status.SENT);
+                    }
                 }
 
                 csvPrintWriter.close();
                 File csvChecksumOutputFile = createChecksumFile(csvOutputFile);
                 File csvPgpFile = cryptFile(csvOutputFile);
-                citizenDAO.saveAll(winners);
+                if (updateStatusEnabled) {
+                    citizenDAO.saveAll(winners);
+                }
                 if (sftpEnable) {
                     sendFiles(csvPgpFile, csvChecksumOutputFile);
                 }
@@ -199,14 +215,17 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
         if (logger.isDebugEnabled()) {
             logger.debug("WinnersServiceImpl.cryptFile start");
         }
+
         String publicKeyWithLineBreaks = publicKey.replace("\\n", System.lineSeparator());
         InputStream publicKeyIS = new ByteArrayInputStream(publicKeyWithLineBreaks.getBytes());
         File csvPgpFile = new File(csvOutputFile.getAbsolutePath().concat(".pgp"));
-        FileOutputStream outputFOS = new FileOutputStream(csvPgpFile);
-        EncryptUtil.encryptFile(outputFOS,
-                csvOutputFile.getAbsolutePath(),
-                EncryptUtil.readPublicKey(publicKeyIS),
-                false, true);
+
+        try (FileOutputStream outputFOS = new FileOutputStream(csvPgpFile)) {
+            EncryptUtil.encryptFile(outputFOS,
+                    csvOutputFile.getAbsolutePath(),
+                    EncryptUtil.readPublicKey(publicKeyIS),
+                    false, true);
+        }
 
         if (logger.isDebugEnabled()) {
             logger.debug("WinnersServiceImpl.cryptFile end");
