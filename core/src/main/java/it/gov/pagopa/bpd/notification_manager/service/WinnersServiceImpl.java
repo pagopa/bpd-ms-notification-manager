@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.io.*;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchProviderException;
@@ -36,6 +37,10 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
     private static final DecimalFormat NINE_DIGITS_FORMAT = new DecimalFormat("000000000");
     private static final DecimalFormat TWO_DIGITS_FORMAT = new DecimalFormat("00");
     private static final DecimalFormat SIX_DIGITS_FORMAT = new DecimalFormat("000000");
+    private static final BigDecimal CENTS_MULTIPLICAND = BigDecimal.valueOf(100);
+    private static final DateTimeFormatter ONLY_DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter CSV_NAME_ONLY_DATE_FORMATTER = DateTimeFormatter.ofPattern("ddMMyyyy");
+    private static final DateTimeFormatter CSV_NAME_ONLY_TIME_FORMATTER = DateTimeFormatter.ofPattern("HHmmss");
 
     private final CitizenDAO citizenDAO;
     private final WinnersSftpConnector winnersSftpConnector;
@@ -111,8 +116,8 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
                     + serviceName + "."
                     + authorityType + "."
                     + fileType + "."
-                    + LocalDate.now().format(DateTimeFormatter.ofPattern("ddMMyyyy")) + "."
-                    + LocalTime.now().format(DateTimeFormatter.ofPattern("HHmmss")) + ".";
+                    + LocalDate.now().format(CSV_NAME_ONLY_DATE_FORMATTER) + "."
+                    + LocalTime.now().format(CSV_NAME_ONLY_TIME_FORMATTER) + ".";
 
             String totalFileNumber = TWO_DIGITS_FORMAT.format((int) Math.ceil((double) winners.size() / maxRow));
             String currentFileNumber = TWO_DIGITS_FORMAT.format(fileChunkCount);
@@ -172,8 +177,8 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
                 .append(PAYMENT_REASON_DELIMITER)
                 .append("Cashback di Stato")
                 .append(PAYMENT_REASON_DELIMITER)
-                .append("dal ").append(winner.getAwardPeriodStart().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
-                .append(" al ").append(winner.getAwardPeriodEnd().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                .append("dal ").append(winner.getAwardPeriodStart().format(ONLY_DATE_FORMATTER))
+                .append(" al ").append(winner.getAwardPeriodEnd().format(ONLY_DATE_FORMATTER));
 
         if (!winner.getFiscalCode().equals(winner.getAccountHolderFiscalCode())) {
             paymentReasonBuilder.append(PAYMENT_REASON_DELIMITER)
@@ -190,7 +195,7 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
                 CSV_DELIMITER +
                 winner.getAccountHolderSurname() +
                 CSV_DELIMITER +
-                SIX_DIGITS_FORMAT.format(winner.getAmount()) +
+                SIX_DIGITS_FORMAT.format(winner.getAmount().multiply(CENTS_MULTIPLICAND)) +
                 CSV_DELIMITER +
                 paymentReasonBuilder.toString() +
                 CSV_DELIMITER +
@@ -198,13 +203,13 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
                 CSV_DELIMITER +
                 TWO_DIGITS_FORMAT.format(winner.getAwardPeriodId()) +
                 CSV_DELIMITER +
-                winner.getAwardPeriodStart().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) +
+                winner.getAwardPeriodStart().format(ONLY_DATE_FORMATTER) +
                 CSV_DELIMITER +
-                winner.getAwardPeriodEnd().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) +
+                winner.getAwardPeriodEnd().format(ONLY_DATE_FORMATTER) +
                 CSV_DELIMITER +
-                SIX_DIGITS_FORMAT.format(winner.getCashback()) +
+                SIX_DIGITS_FORMAT.format(winner.getCashback().multiply(CENTS_MULTIPLICAND)) +
                 CSV_DELIMITER +
-                SIX_DIGITS_FORMAT.format(winner.getJackpot()) +
+                SIX_DIGITS_FORMAT.format(winner.getJackpot().multiply(CENTS_MULTIPLICAND)) +
                 CSV_DELIMITER +
                 winner.getCheckInstrStatus() +
                 CSV_DELIMITER +
