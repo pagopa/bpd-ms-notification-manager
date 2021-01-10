@@ -10,10 +10,13 @@ public interface NotificationService {
 
     void notifyUnsetPayoffInstr();
 
-    void updateRankingAndWinners() throws IOException;
+    void updateRanking() throws IOException;
 
-    void findWinners();
+    void updateWinners() throws IOException;
 
+    void sendWinners() throws IOException;
+
+    void testConnection() throws IOException;
 
 
 }
