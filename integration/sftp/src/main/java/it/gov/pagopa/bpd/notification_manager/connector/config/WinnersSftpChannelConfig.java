@@ -8,22 +8,29 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.expression.common.LiteralExpression;
-import org.springframework.integration.annotation.Gateway;
-import org.springframework.integration.annotation.IntegrationComponentScan;
-import org.springframework.integration.annotation.MessagingGateway;
-import org.springframework.integration.annotation.ServiceActivator;
+import org.springframework.integration.annotation.*;
+import org.springframework.integration.core.MessageSource;
 import org.springframework.integration.file.remote.session.CachingSessionFactory;
 import org.springframework.integration.file.remote.session.SessionFactory;
+import org.springframework.integration.sftp.inbound.SftpInboundFileSynchronizer;
+import org.springframework.integration.sftp.inbound.SftpInboundFileSynchronizingMessageSource;
 import org.springframework.integration.sftp.outbound.SftpMessageHandler;
 import org.springframework.integration.sftp.session.DefaultSftpSessionFactory;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;
+import org.springframework.messaging.MessagingException;
 
 import java.io.File;
+import java.util.logging.Logger;
+
 
 @Configuration
+//@Slf4j
 @IntegrationComponentScan(value = "it.gov.pagopa.bpd")
 @PropertySource("classpath:config/winnersSftpChannel.properties")
 public class WinnersSftpChannelConfig {
+
+    static Logger logger;
 
     @Value("${connectors.sftpConfigurations.connection.host}")
     private String host;
@@ -37,8 +44,10 @@ public class WinnersSftpChannelConfig {
     private String privateKey;
     @Value("${connectors.sftpConfigurations.connection.passphrase}")
     private String passphrase;
-    @Value("${connectors.sftpConfigurations.connection.directory}")
-    private String remoteDirectory;
+    @Value("${connectors.sftpConfigurations.connection.outbound-directory}")
+    private String remoteOutboundDirectory;
+    @Value("${connectors.sftpConfigurations.connection.inbound-directory}")
+    private String remoteInboundDirectory;
     @Value("${connectors.sftpConfigurations.connection.allowUnknownKeys}")
     private Boolean allowUnknownKeys;
 
@@ -65,7 +74,7 @@ public class WinnersSftpChannelConfig {
     @ServiceActivator(inputChannel = "sftpChannel")
     public MessageHandler handler() {
         SftpMessageHandler handler = new SftpMessageHandler(sftpSessionFactory());
-        handler.setRemoteDirectoryExpression(new LiteralExpression(remoteDirectory));
+        handler.setRemoteDirectoryExpression(new LiteralExpression(remoteOutboundDirectory));
         handler.setFileNameGenerator(message -> {
             if (message.getPayload() instanceof File) {
                 return ((File) message.getPayload()).getName();
@@ -82,6 +91,51 @@ public class WinnersSftpChannelConfig {
         @Gateway(requestChannel = "sftpChannel")
         void sendToSftp(File file);
 
+    }
+
+
+    @Bean
+    public SftpInboundFileSynchronizer sftpInboundFileSynchronizer() {
+        SftpInboundFileSynchronizer fileSynchronizer = new SftpInboundFileSynchronizer(sftpSessionFactory());
+        fileSynchronizer.setDeleteRemoteFiles(false);
+        fileSynchronizer.setRemoteDirectory(remoteInboundDirectory);
+//        fileSynchronizer.setFilter(new SftpSimplePatternFileListFilter("*.xml"));
+        return fileSynchronizer;
+    }
+
+    @Bean
+    @InboundChannelAdapter(channel = "inboundSftpChannel", poller = @Poller(fixedDelay = "2000"))
+    public MessageSource<File> sftpMessageSource() {
+        SftpInboundFileSynchronizingMessageSource source =
+                new SftpInboundFileSynchronizingMessageSource(sftpInboundFileSynchronizer());
+        source.setLocalDirectory(new File("sftp-inbound"));
+        source.setAutoCreateLocalDirectory(true);
+//        source.setLocalFilter(new AcceptOnceFileListFilter<File>());
+//        source.setMaxFetchSize(1);
+        return source;
+    }
+
+//    @ServiceActivator(inputChannel = "inboundSftpChannel")
+//    public void handleIncomingFile(File file) throws IOException {
+//        logger.info(String.format("handleIncomingFile BEGIN %s", file.getName()));
+//        String content = FileUtils.readFileToString(file, "UTF-8");
+//        logger.info(String.format("Content: %s", content));
+//        logger.info(String.format("handleIncomingFile END %s", file.getName()));
+//
+//    }
+
+
+    @Bean
+    @ServiceActivator(inputChannel = "inboundSftpChannel")
+    public MessageHandler inboundHandler() {
+        return new MessageHandler() {
+
+            @Override
+            public void handleMessage(Message<?> message) throws MessagingException {
+                System.out.println(message.getPayload());
+            }
+
+        };
     }
 
 }

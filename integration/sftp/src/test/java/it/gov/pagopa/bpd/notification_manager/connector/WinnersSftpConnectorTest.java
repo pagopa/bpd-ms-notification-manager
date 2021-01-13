@@ -50,13 +50,15 @@ public class WinnersSftpConnectorTest {
 
     static Path folderPath;
 
+
     @Autowired
     WinnersSftpConnector winnersSftpConnector;
+
 
     @BeforeClass
     public static void serverStartup() throws Exception {
         PublicKey publicKey = decodePublicKey();
-        folderPath = Files.createTempDirectory("SFTP_TEMP");
+        folderPath = Paths.get("C:\\Users\\acastagn\\Progetti\\CentroStella\\doc\\FTP-host");
         server = SshServer.setUpDefaultServer();
         server.setPort(10022);
         server.setPublickeyAuthenticator(
@@ -109,13 +111,19 @@ public class WinnersSftpConnectorTest {
 
     @SneakyThrows
     @Test
-    public void test_sftp_ok() {
+    public void test_sftp_outbound_ok() {
         Path tempFile = Files.createTempFile("test", ".csv");
-        assertEquals(0, Files.list(folderPath).count());
+        assertEquals(0, Files.list(Paths.get(folderPath + "/Inbox/")).count());
         winnersSftpConnector.sendFile(tempFile.toFile());
-        List<Path> paths = Files.list(folderPath).collect(Collectors.toList());
+        List<Path> paths = Files.list(Paths.get(folderPath + "/Inbox/")).collect(Collectors.toList());
         assertEquals(1, paths.size());
         assertEquals(tempFile.getFileName(), paths.get(0).getFileName());
+    }
+
+    @SneakyThrows
+    @Test
+    public void test_sftp_inbound_ok() {
+        Thread.sleep(300000);
     }
 
     @SneakyThrows
