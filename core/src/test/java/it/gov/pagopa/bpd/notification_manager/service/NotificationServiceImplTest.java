@@ -21,6 +21,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
@@ -94,7 +95,7 @@ public class NotificationServiceImplTest {
                     return result;
                 });
 
-        BDDMockito.when(winnersService.sendWinners(Mockito.any(Long.class), Mockito.anyInt(), Mockito.any()))
+        BDDMockito.when(winnersService.sendWinners(Mockito.any(Long.class), Mockito.anyInt(), Mockito.any(), Mockito.any(LocalDateTime.class), Mockito.anyInt()))
                 .thenAnswer(invocation -> 0);
     }
 
@@ -121,7 +122,7 @@ public class NotificationServiceImplTest {
 
         notificationService.sendWinners();
 
-        verify(winnersService, atLeastOnce()).sendWinners(Mockito.any(Long.class), Mockito.anyInt(), Mockito.any());
+        verify(winnersService, atLeastOnce()).sendWinners(Mockito.any(Long.class), Mockito.anyInt(), Mockito.any(), Mockito.any(LocalDateTime.class), Mockito.anyInt());
         verify(awardPeriodRestClientMock, only()).findAllAwardPeriods();
 
     }

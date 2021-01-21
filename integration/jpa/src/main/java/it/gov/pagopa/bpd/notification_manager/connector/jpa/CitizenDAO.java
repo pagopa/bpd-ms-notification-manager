@@ -22,6 +22,15 @@ public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long> {
     void updateWinners();
 
     @Query(nativeQuery = true,
+            value = "SELECT count(1)" +
+                    " FROM bpd_award_winner baw" +
+                    " WHERE baw.award_period_id_n = :awardPeriodId" +
+                    " AND baw.enabled_b = true" +
+                    " AND baw.payoff_instr_s IS NOT NULL" +
+                    " AND baw.status_s <> 'SENT'")
+    int countFindWinners(@Param("awardPeriodId") Long awardPeriodId);
+
+    @Query(nativeQuery = true,
             value = "SELECT *" +
                     " FROM bpd_award_winner baw" +
                     " WHERE baw.award_period_id_n = :awardPeriodId" +
