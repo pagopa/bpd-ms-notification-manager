@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.security.NoSuchProviderException;
 import java.text.DecimalFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -80,7 +81,7 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
 
     @Override
     @Transactional
-    public int sendWinners(Long endingPeriodId, int fileChunkCount, Path tempDir) {
+    public int sendWinners(Long endingPeriodId, int fileChunkCount, Path tempDir, LocalDateTime timestamp, int recordTotCount) {
         if (logger.isDebugEnabled()) {
             logger.debug("WinnersServiceImpl.sendWinners start");
         }
@@ -116,16 +117,16 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
                     + serviceName + "."
                     + authorityType + "."
                     + fileType + "."
-                    + LocalDate.now().format(CSV_NAME_ONLY_DATE_FORMATTER) + "."
-                    + LocalTime.now().format(CSV_NAME_ONLY_TIME_FORMATTER) + ".";
+                    + timestamp.format(CSV_NAME_ONLY_DATE_FORMATTER) + "."
+                    + timestamp.format(CSV_NAME_ONLY_TIME_FORMATTER) + ".";
 
-            String totalFileNumber = TWO_DIGITS_FORMAT.format((int) Math.ceil((double) winners.size() / maxRow));
-            String currentFileNumber = TWO_DIGITS_FORMAT.format(fileChunkCount);
+            String totalFileNumber = TWO_DIGITS_FORMAT.format((int) Math.ceil((double) recordTotCount / maxRow));
+            String currentFileNumber = TWO_DIGITS_FORMAT.format(fileChunkCount+1);
 
             String fileName = filenamePrefix
                     + currentFileNumber + "_" + totalFileNumber + "."
-                    + (winners.size() <= maxRow ? winners.size() :
-                    ((int) Math.ceil(((double) winners.size() / maxRow)) > fileChunkCount ? maxRow : winners.size() % maxRow))
+                    + (recordTotCount <= maxRow ? recordTotCount :
+                    ((int) Math.ceil(((double) recordTotCount / maxRow)) > fileChunkCount+1 ? maxRow : recordTotCount % maxRow))
                     + ".csv";
 
             if (logger.isInfoEnabled()) {

@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Period;
 import java.util.List;
 
@@ -142,13 +143,16 @@ class NotificationServiceImpl extends BaseService implements NotificationService
             int fileChunkCount = 0;
             int fetchedRecord;
 
+            LocalDateTime timestamp = LocalDateTime.now();
+            int recordTotCount = citizenDAO.countFindWinners(endingPeriodId);
+
             Path tempDir = Files.createTempDirectory("csv_directory");
             if (logger.isInfoEnabled()) {
                 logger.info(String.format("temporaryDirectoryPath = %s", tempDir.toAbsolutePath().toString()));
             }
 
             do {
-                fetchedRecord = winnersService.sendWinners(endingPeriodId, fileChunkCount, tempDir);
+                fetchedRecord = winnersService.sendWinners(endingPeriodId, fileChunkCount, tempDir, timestamp, recordTotCount);
                 fileChunkCount++;
 
             } while (fetchedRecord == maxRow);
