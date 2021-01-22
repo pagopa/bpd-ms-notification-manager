@@ -73,9 +73,9 @@ public class NotificationServiceImplTest {
     @Test
     public void testUpdateWinners() throws IOException {
 
-        notificationService.updateWinners();
-        verify(citizenDAOMock, only()).updateWinners();
-        verify(citizenDAOMock, times(1)).updateWinners();
+        notificationService.updateWinners(Mockito.anyLong());
+        verify(citizenDAOMock, only()).updateWinners(Mockito.anyLong());
+        verify(citizenDAOMock, times(1)).updateWinners(Mockito.anyLong());
     }
 
     @PostConstruct
@@ -120,7 +120,7 @@ public class NotificationServiceImplTest {
                     return result;
                 });
 
-        notificationService.sendWinners();
+        notificationService.updateAndSendWinners();
 
         verify(winnersService, atLeastOnce()).sendWinners(Mockito.any(Long.class), Mockito.anyInt(), Mockito.any(), Mockito.any(LocalDateTime.class), Mockito.anyInt());
         verify(awardPeriodRestClientMock, only()).findAllAwardPeriods();
@@ -148,7 +148,7 @@ public class NotificationServiceImplTest {
                     return result;
                 });
 
-        notificationService.sendWinners();
+        notificationService.updateAndSendWinners();
 
         verifyZeroInteractions(winnersService);
         verify(awardPeriodRestClientMock, only()).findAllAwardPeriods();

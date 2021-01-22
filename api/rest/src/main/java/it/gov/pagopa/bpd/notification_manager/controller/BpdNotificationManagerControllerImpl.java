@@ -23,9 +23,13 @@ class BpdNotificationManagerControllerImpl extends StatelessController implement
     }
 
     @Override
-    public void sendWinners() throws IOException {
-        notificationService.sendWinners();
+    public void sendWinners(Long awardPeriodId) throws IOException {
+        notificationService.sendWinners(awardPeriodId);
+    }
 
+    @Override
+    public void updateWinners(Long awardPeriodId) throws IOException {
+        notificationService.updateWinners(awardPeriodId);
     }
 
     @Override
