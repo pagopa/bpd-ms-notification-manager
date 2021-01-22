@@ -110,23 +110,22 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     }
 
     @Override
-    @Scheduled(cron = "${core.NotificationService.updateWinners.scheduler}")
-    public void updateWinners() {
+    public void updateWinners(Long awardPeriodId) {
         if (logger.isInfoEnabled()) {
-            logger.info("Executing procedure: updateWinners");
+            logger.info(String.format("Executing procedure updateWinners for awardPeriod %s", awardPeriodId));
         }
-        citizenDAO.updateWinners();
+        citizenDAO.updateWinners(awardPeriodId);
         if (logger.isInfoEnabled()) {
-            logger.info("Executed procedure: updateWinners");
+            logger.info(String.format("Executed procedure updateWinners for awardPeriod %s", awardPeriodId));
         }
-
     }
 
     @Override
-    @Scheduled(cron = "${core.NotificationService.findWinners.scheduler}")
-    public void sendWinners() throws IOException {
+    @Scheduled(cron = "${core.NotificationService.updateAndSendWinners.scheduler}")
+    public void updateAndSendWinners() throws IOException {
+
         if (logger.isInfoEnabled()) {
-            logger.info("NotificationManagerServiceImpl.sendWinners start");
+            logger.info("NotificationManagerServiceImpl.updateAndSendWinners start");
         }
 
         List<AwardPeriod> awardPeriods = awardPeriodRestClient.findAllAwardPeriods();
@@ -138,32 +137,49 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                 endingPeriodId = awardPeriod.getAwardPeriodId();
             }
         }
-
         if (endingPeriodId != null) {
-            int fileChunkCount = 0;
-            int fetchedRecord;
-
-            LocalDateTime timestamp = LocalDateTime.now();
-            int recordTotCount = citizenDAO.countFindWinners(endingPeriodId);
-
-            Path tempDir = Files.createTempDirectory("csv_directory");
             if (logger.isInfoEnabled()) {
-                logger.info(String.format("temporaryDirectoryPath = %s", tempDir.toAbsolutePath().toString()));
+                logger.info("NotificationManagerServiceImpl.updateAndSendWinners: ending award period found");
             }
+            updateWinners(endingPeriodId);
+            sendWinners(endingPeriodId);
+        }
 
-            do {
-                fetchedRecord = winnersService.sendWinners(endingPeriodId, fileChunkCount, tempDir, timestamp, recordTotCount);
-                fileChunkCount++;
+        if (logger.isInfoEnabled()) {
+            logger.info("NotificationManagerServiceImpl.updateAndSendWinners end");
+        }
 
-            } while (fetchedRecord == maxRow);
 
-            if (deleteTmpFilesEnable) {
-                if (logger.isInfoEnabled()) {
-                    logger.info(String.format("Deleting %s", tempDir));
-                }
-                deleteDirectoryRecursion(tempDir);
+    }
+
+    @Override
+    public void sendWinners(Long awardPeriodId) throws IOException {
+        if (logger.isInfoEnabled()) {
+            logger.info("NotificationManagerServiceImpl.sendWinners start");
+        }
+
+        int fileChunkCount = 0;
+        int fetchedRecord;
+
+        LocalDateTime timestamp = LocalDateTime.now();
+        int recordTotCount = citizenDAO.countFindWinners(awardPeriodId);
+
+        Path tempDir = Files.createTempDirectory("csv_directory");
+        if (logger.isInfoEnabled()) {
+            logger.info(String.format("temporaryDirectoryPath = %s", tempDir.toAbsolutePath().toString()));
+        }
+
+        do {
+            fetchedRecord = winnersService.sendWinners(awardPeriodId, fileChunkCount, tempDir, timestamp, recordTotCount);
+            fileChunkCount++;
+
+        } while (fetchedRecord == maxRow);
+
+        if (deleteTmpFilesEnable) {
+            if (logger.isInfoEnabled()) {
+                logger.info(String.format("Deleting %s", tempDir));
             }
-
+            deleteDirectoryRecursion(tempDir);
         }
 
         if (logger.isInfoEnabled()) {
