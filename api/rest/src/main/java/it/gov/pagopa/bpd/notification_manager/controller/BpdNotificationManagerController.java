@@ -1,13 +1,14 @@
 package it.gov.pagopa.bpd.notification_manager.controller;
 
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiParam;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.*;
 
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
 import java.io.IOException;
 
 /**
@@ -17,9 +18,19 @@ import java.io.IOException;
 @RequestMapping("/bpd/notification-manager")
 public interface BpdNotificationManagerController {
 
+    @PostMapping(value = "/winners/consap", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    void sendWinners(
+            @ApiParam(required = true)
+            @RequestParam("awardPeriodId") Long awardPeriodId
+    ) throws IOException;
+
     @PostMapping(value = "/winners", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    void sendWinners() throws IOException;
+    void updateWinners(
+            @ApiParam(required = true)
+            @RequestParam("awardPeriodId") Long awardPeriodId
+    ) throws IOException;
 
     @GetMapping(value = "/notify", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)

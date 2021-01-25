@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -89,7 +90,7 @@ public class WinnersServiceImplTest {
     @Test
     public void testSendWinnersWithResults() throws IOException {
         Path tempDir = Files.createTempDirectory("csv_directory");
-        winnersService.sendWinners(0L, 0, tempDir);
+        winnersService.sendWinners(0L, 0, tempDir, LocalDateTime.now(), 0);
 
         verify(citizenDAOMock, atLeastOnce()).findWinners(Mockito.any(Long.class), Mockito.any(Long.class));
         verify(winnersSftpConnectorMock, atLeastOnce()).sendFile(Mockito.any(File.class));
@@ -99,7 +100,7 @@ public class WinnersServiceImplTest {
     @Test
     public void testSendWinnersWithoutResults() throws IOException {
         Path tempDir = Files.createTempDirectory("csv_directory");
-        winnersService.sendWinners(-1L, 0, tempDir);
+        winnersService.sendWinners(-1L, 0, tempDir, LocalDateTime.now(), 0);
 
         verifyZeroInteractions(winnersSftpConnectorMock);
     }
