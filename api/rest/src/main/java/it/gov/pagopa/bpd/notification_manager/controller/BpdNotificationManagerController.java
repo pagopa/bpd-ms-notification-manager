@@ -6,9 +6,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
 import java.io.IOException;
 
 /**
@@ -39,4 +36,8 @@ public interface BpdNotificationManagerController {
     @PostMapping(value = "/test", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
     void testConnection() throws IOException;
+
+    @PostMapping(value = "/notifyPayments", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    void notifyAwardWinnerPayments();
 }
