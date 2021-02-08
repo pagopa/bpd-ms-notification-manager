@@ -41,4 +41,9 @@ class BpdNotificationManagerControllerImpl extends StatelessController implement
     public void testConnection() throws IOException {
         notificationService.testConnection();
     }
+
+    @Override
+    public void notifyAwardWinnerPayments() {
+        notificationService.notifyWinnersPayments();
+    }
 }

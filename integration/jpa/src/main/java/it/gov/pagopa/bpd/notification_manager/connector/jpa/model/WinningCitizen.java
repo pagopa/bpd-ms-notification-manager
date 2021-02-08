@@ -67,6 +67,27 @@ public class WinningCitizen extends BaseEntity {
     @Column(name = "status_s")
     private Status status;
 
+    @Column(name = "esito_bonifico_s")
+    private String esitoBonifico;
+
+    @Column(name = "cro_s")
+    private String cro;
+
+    @Column(name = "data_esecuzione_t")
+    private LocalDate bankTransferDate;
+
+    @Column(name = "result_reason_s")
+    private String resultReason;
+
+    @Column(name = "to_notify_b")
+    private Boolean toNotify;
+
+    @Column(name = "notify_times_n")
+    private Long notifyTimes;
+
+    @Column(name = "notify_id_s")
+    private String notifyId;
+
     public enum Status {
         NEW, SENT, RECOVERY
     }
