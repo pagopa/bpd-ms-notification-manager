@@ -265,10 +265,10 @@ class NotificationServiceImpl extends BaseService implements NotificationService
 
                 NotificationDTO dto = notificationDtoMapper.NotificationDtoMapper(
                         toNotifyWin.getFiscalCode(), timeToLive, notifySubject, notifyMarkdown);
-                //NotificationResource resource = notificationRestConnector.notify(dto);
+                NotificationResource resource = notificationRestConnector.notify(dto);
                 toNotifyWin.setNotifyTimes(Long.sum(toNotifyWin.getNotifyTimes()!=null?
                                                         toNotifyWin.getNotifyTimes() : 0L,1L));
-                //toNotifyWin.setNotifyId(resource.getId());
+                toNotifyWin.setNotifyId(resource.getId());
 
                 notityCount += 1;
 //                }
