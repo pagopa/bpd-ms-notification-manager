@@ -61,6 +61,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     private final Integer notifyUpdateRows;
     private final AwardWinnerErrorDAO awardWinnerErrorDAO;
     private static final String MARKDOWN_NA="n.a.";
+    private static final String ORDINE_OK="ORDINE ESEGUITO";
 
     @Autowired
     NotificationServiceImpl(
@@ -328,7 +329,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
 
     private String getNotifyMarkdown(WinningCitizen toNotifyWin){
         String retVal= null;
-        if("OK".equals(toNotifyWin.getEsitoBonifico())){
+        if(ORDINE_OK.equals(toNotifyWin.getEsitoBonifico())){
             retVal=this.notifyMarkdownOK.replace("{{amount}}",toNotifyWin.getAmount().toString()!=null ? toNotifyWin.getAmount().toString() : MARKDOWN_NA)
                             .replace("{{executionDate}}",toNotifyWin.getBankTransferDate()!=null ? toNotifyWin.getBankTransferDate().format(DateTimeFormatter.ISO_DATE) : MARKDOWN_NA)
                             .replace("{{cro}}",toNotifyWin.getCro()!=null ? toNotifyWin.getCro() : MARKDOWN_NA);
@@ -341,7 +342,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     }
 
     private String getNotifySubject(WinningCitizen toNotifyWin){
-        return "OK".equals(toNotifyWin.getEsitoBonifico()) ? this.notifySubjectOK : this.notifySubjectKO;
+        return ORDINE_OK.equals(toNotifyWin.getEsitoBonifico()) ? this.notifySubjectOK : this.notifySubjectKO;
     }
 }
 
