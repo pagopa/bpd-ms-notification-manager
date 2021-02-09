@@ -64,7 +64,7 @@ public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long> {
                     " AND baw.status_s not in ('NEW')" +
                     " AND baw.to_notify_b is true" +
                     " AND baw.esito_bonifico_s IS NOT NULL" +
-                    " AND (:notifyTimesLimit = -1 OR baw.notify_times_n < :notifyTimesLimit)" +
+                    " AND (:notifyTimesLimit = -1 OR baw.notify_times_n <= :notifyTimesLimit)" +
                     " ORDER BY id_n" +
                     " OFFSET :offset" +
                     " LIMIT :limit" +
