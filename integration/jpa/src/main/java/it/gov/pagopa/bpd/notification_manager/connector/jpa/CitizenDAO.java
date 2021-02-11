@@ -58,13 +58,14 @@ public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long> {
     @Query(nativeQuery=true,
             value="SELECT *" +
                     " FROM bpd_award_winner baw" +
-                    " WHERE baw.enabled_b = true" +
+                    " WHERE baw.enabled_b is true" +
                     " AND (:awardPeriodId = -1 OR baw.award_period_id_n = :awardPeriodId)" +
                     " AND baw.payoff_instr_s IS NOT NULL" +
                     " AND baw.status_s not in ('NEW')" +
                     " AND baw.to_notify_b is true" +
                     " AND baw.esito_bonifico_s IS NOT NULL" +
-                    " AND (:notifyTimesLimit = -1 OR baw.notify_times_n <= :notifyTimesLimit)" +
+                    " AND (:notifyTimesLimit = -1 OR baw.notify_times_n < :notifyTimesLimit)" +
+                    " AND EXISTS( SELECT * FROM bpd_citizen bc WHERE bc.fiscal_code_s = baw.fiscal_code_s AND bc.enabled_b IS true )" +
                     " ORDER BY id_n" +
                     " OFFSET :offset" +
                     " LIMIT :limit" +

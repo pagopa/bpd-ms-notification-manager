@@ -245,7 +245,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     @Override
     @Scheduled(cron = "${core.NotificationService.notifyWinners.scheduler}")
     @Transactional
-    public void notifyWinnersPayments() {
+    public void notifyWinnersPayments() throws IOException {
         if (logger.isInfoEnabled()) {
             logger.info("NotificationManagerServiceImpl.notifyWinnersPayments start");
         }
