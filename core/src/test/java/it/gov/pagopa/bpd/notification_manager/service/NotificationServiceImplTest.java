@@ -177,7 +177,7 @@ public class NotificationServiceImplTest {
     }
 
     @Test
-    public void testNotifyWinners(){
+    public void testNotifyWinners() throws IOException{
         notificationService.notifyWinnersPayments();
 
         verifyZeroInteractions(winnersService);

@@ -21,5 +21,5 @@ public interface NotificationService {
 
     void testConnection() throws IOException;
 
-    void notifyWinnersPayments();
+    void notifyWinnersPayments() throws IOException;
 }

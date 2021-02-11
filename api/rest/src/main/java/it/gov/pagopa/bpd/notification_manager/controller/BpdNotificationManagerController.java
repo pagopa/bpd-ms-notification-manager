@@ -39,5 +39,5 @@ public interface BpdNotificationManagerController {
 
     @PostMapping(value = "/notifyPayments", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    void notifyAwardWinnerPayments();
+    void notifyAwardWinnerPayments() throws IOException;
 }
