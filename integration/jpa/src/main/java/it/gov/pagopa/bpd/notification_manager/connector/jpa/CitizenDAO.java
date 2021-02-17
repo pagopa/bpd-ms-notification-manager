@@ -63,7 +63,7 @@ public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long> {
                     " AND baw.payoff_instr_s IS NOT NULL" +
                     " AND baw.status_s not in ('NEW')" +
                     " AND baw.to_notify_b is true" +
-                    " AND baw.esito_bonifico_s IS NOT NULL" +
+                    " AND baw.esito_bonifico_s IN (:resultList)" +
                     " AND (:notifyTimesLimit = -1 OR baw.notify_times_n < :notifyTimesLimit)" +
                     " AND EXISTS( SELECT * FROM bpd_citizen bc WHERE bc.fiscal_code_s = baw.fiscal_code_s AND bc.enabled_b IS true )" +
                     " ORDER BY id_n" +
@@ -73,6 +73,7 @@ public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long> {
     )
     List<WinningCitizen> findWinnersToNotify(@Param("awardPeriodId") Long awardPeriodId,
                                              @Param("notifyTimesLimit") Long notifyTimesLimit,
+                                     @Param("resultList") List<String> resultList,
                                      @Param("offset") Long offset,
                                      @Param("limit") Long limit);
 

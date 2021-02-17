@@ -104,7 +104,7 @@ public class NotificationServiceImplTest {
         BDDMockito.when(winnersService.sendWinners(Mockito.any(Long.class), Mockito.anyInt(), Mockito.any(), Mockito.any(LocalDateTime.class), Mockito.anyInt()))
                 .thenAnswer(invocation -> 0);
 
-        BDDMockito.when(citizenDAOMock.findWinnersToNotify(Mockito.anyLong(),Mockito.anyLong(),Mockito.anyLong(),Mockito.anyLong()))
+        BDDMockito.when(citizenDAOMock.findWinnersToNotify(Mockito.anyLong(),Mockito.anyLong(),Mockito.anyList(),Mockito.anyLong(),Mockito.anyLong()))
                 .thenAnswer(invocation -> {
                     List<WinningCitizen> result = new ArrayList<>();
                     WinningCitizen citizen = new WinningCitizen();
@@ -181,7 +181,7 @@ public class NotificationServiceImplTest {
         notificationService.notifyWinnersPayments();
 
         verifyZeroInteractions(winnersService);
-        verify(citizenDAOMock, times(1)).findWinnersToNotify(Mockito.anyLong(),Mockito.anyLong(),Mockito.anyLong(),Mockito.anyLong());
+        verify(citizenDAOMock, times(1)).findWinnersToNotify(Mockito.anyLong(),Mockito.anyLong(),Mockito.anyList(),Mockito.anyLong(),Mockito.anyLong());
     }
 
 }
