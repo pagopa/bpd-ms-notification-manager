@@ -62,6 +62,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     private final AwardWinnerErrorDAO awardWinnerErrorDAO;
     private static final String MARKDOWN_NA="n.a.";
     private static final String ORDINE_OK="ORDINE ESEGUITO";
+    private final List<String> notifyResultList;
 
     @Autowired
     NotificationServiceImpl(
@@ -82,7 +83,8 @@ class NotificationServiceImpl extends BaseService implements NotificationService
             @Value("${core.NotificationService.notifyWinners.subject.ok}") String notifySubjectOK,
             @Value("${core.NotificationService.notifyWinners.subject.ko}") String notifySubjectKO,
             @Value("${core.NotificationService.notifyWinners.updateRowsNumber}") Integer notifyUpdateRows,
-            AwardWinnerErrorDAO awardWinnerErrorDAO
+            AwardWinnerErrorDAO awardWinnerErrorDAO,
+            @Value("${core.NotificationService.notifyWinners.resultList}") List<String> notifyResultList
             ) {
         this.citizenDAO = citizenDAO;
         this.notificationDtoMapper = notificationDtoMapper;
@@ -102,6 +104,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
         this.notifySubjectKO=notifySubjectKO;
         this.notifyUpdateRows=notifyUpdateRows;
         this.awardWinnerErrorDAO=awardWinnerErrorDAO;
+        this.notifyResultList=notifyResultList;
     }
 
 
@@ -253,7 +256,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
         int notityCount = 0;
         int errorCount = 0;
 
-        List<WinningCitizen> winners = citizenDAO.findWinnersToNotify(-1L, maxNotifyTimes,0L, maxNotifyRow);
+        List<WinningCitizen> winners = citizenDAO.findWinnersToNotify(-1L, maxNotifyTimes, notifyResultList,0L, maxNotifyRow);
 
         List<WinningCitizen> updateRecords=new ArrayList<WinningCitizen>();
         List<AwardWinnerError> errorRecords=new ArrayList<AwardWinnerError>();
@@ -332,7 +335,8 @@ class NotificationServiceImpl extends BaseService implements NotificationService
         if(ORDINE_OK.equals(toNotifyWin.getEsitoBonifico())){
             retVal=this.notifyMarkdownOK.replace("{{amount}}",toNotifyWin.getAmount().toString()!=null ? toNotifyWin.getAmount().toString() : MARKDOWN_NA)
                             .replace("{{executionDate}}",toNotifyWin.getBankTransferDate()!=null ? toNotifyWin.getBankTransferDate().format(DateTimeFormatter.ISO_DATE) : MARKDOWN_NA)
-                            .replace("{{cro}}",toNotifyWin.getCro()!=null ? toNotifyWin.getCro() : MARKDOWN_NA);
+                            .replace("{{cro}}",toNotifyWin.getCro()!=null ? toNotifyWin.getCro() : MARKDOWN_NA)
+                            .replace("{{IBAN}}",toNotifyWin.getPayoffInstr());
         }else{
             retVal=this.notifyMarkdownKO.replace("{{amount}}",toNotifyWin.getAmount().toString()!=null ? toNotifyWin.getAmount().toString() : MARKDOWN_NA)
                             .replace("{{resultReason}}",toNotifyWin.getResultReason()!=null ? toNotifyWin.getResultReason() : MARKDOWN_NA)
