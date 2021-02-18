@@ -54,6 +54,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     private final Long maxRow;
     private final boolean deleteTmpFilesEnable;
     private final NotificationIOService notificationIOService;
+    private final int notifyLoopNumber;
 
     @Autowired
     NotificationServiceImpl(
@@ -67,6 +68,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
             @Value("${core.NotificationService.notifyUnsetPayoffInstr.markdown}") String markdown,
             @Value("${core.NotificationService.findWinners.maxRow}") Long maxRow,
             @Value("${core.NotificationService.findWinners.deleteTmpFiles.enable}") boolean deleteTmpFilesEnable,
+            @Value("${core.NotificationService.notifyWinners.loopNumber}") int notifyLoopNumber,
             NotificationIOService notificationIOService
             ) {
         this.citizenDAO = citizenDAO;
@@ -80,6 +82,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
         this.maxRow = maxRow;
         this.deleteTmpFilesEnable = deleteTmpFilesEnable;
         this.notificationIOService=notificationIOService;
+        this.notifyLoopNumber=notifyLoopNumber;
     }
 
 
@@ -224,9 +227,15 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     @Scheduled(cron = "${core.NotificationService.notifyWinners.scheduler}")
     public void notifyWinnersPayments() throws IOException {
         int itemCount = 0;
+        int loopNumber = 0;
 
         do{
-            itemCount=notificationIOService.notifyWinnersPayments();
+            if(notifyLoopNumber==-1 || loopNumber<notifyLoopNumber){
+                itemCount=notificationIOService.notifyWinnersPayments();
+                loopNumber++;
+            }else{
+                itemCount = 0;
+            }
         } while(itemCount>0);
     }
 
