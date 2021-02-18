@@ -41,6 +41,8 @@ import java.util.List;
 @Slf4j
 class NotificationServiceImpl extends BaseService implements NotificationService {
 
+    private static final DateTimeFormatter ONLY_DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
     private final CitizenDAO citizenDAO;
     private final NotificationDtoMapper notificationDtoMapper;
     private final NotificationRestConnector notificationRestConnector;
@@ -333,12 +335,15 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     private String getNotifyMarkdown(WinningCitizen toNotifyWin){
         String retVal= null;
         if(ORDINE_OK.equals(toNotifyWin.getEsitoBonifico())){
-            retVal=this.notifyMarkdownOK.replace("{{amount}}",toNotifyWin.getAmount().toString()!=null ? toNotifyWin.getAmount().toString() : MARKDOWN_NA)
-                            .replace("{{executionDate}}",toNotifyWin.getBankTransferDate()!=null ? toNotifyWin.getBankTransferDate().format(DateTimeFormatter.ISO_DATE) : MARKDOWN_NA)
+            retVal=this.notifyMarkdownOK.replace("{{amount}}",toNotifyWin.getAmount().toString()!=null ? toNotifyWin.getAmount().toString().replace(".",",") : MARKDOWN_NA)
+                            .replace("{{executionDate}}",toNotifyWin.getBankTransferDate()!=null ? toNotifyWin.getBankTransferDate().format(ONLY_DATE_FORMATTER) : MARKDOWN_NA)
                             .replace("{{cro}}",toNotifyWin.getCro()!=null ? toNotifyWin.getCro() : MARKDOWN_NA)
-                            .replace("{{IBAN}}",toNotifyWin.getPayoffInstr());
+                            .replace("{{IBAN}}",toNotifyWin.getPayoffInstr())
+                            .replace("{{startDate}}", toNotifyWin.getAwardPeriodStart().format(ONLY_DATE_FORMATTER))
+                            .replace("{{endDate}}", toNotifyWin.getAwardPeriodEnd().format(ONLY_DATE_FORMATTER));
         }else{
-            retVal=this.notifyMarkdownKO.replace("{{amount}}",toNotifyWin.getAmount().toString()!=null ? toNotifyWin.getAmount().toString() : MARKDOWN_NA)
+            retVal=this.notifyMarkdownKO.replace("{{amount}}",toNotifyWin.getAmount().toString()!=null ? toNotifyWin.getAmount().toString().replace(".",",") : MARKDOWN_NA)
+                            .replace("{{executionDate}}",toNotifyWin.getBankTransferDate()!=null ? toNotifyWin.getBankTransferDate().format(ONLY_DATE_FORMATTER) : MARKDOWN_NA)
                             .replace("{{resultReason}}",toNotifyWin.getResultReason()!=null ? toNotifyWin.getResultReason() : MARKDOWN_NA)
                             .replace("{{cro}}",toNotifyWin.getCro()!=null ? toNotifyWin.getCro() : MARKDOWN_NA);
         }
