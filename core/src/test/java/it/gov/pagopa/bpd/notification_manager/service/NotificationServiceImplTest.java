@@ -51,6 +51,9 @@ public class NotificationServiceImplTest {
     @MockBean
     private WinnersService winnersService;
 
+    @MockBean
+    private NotificationIOService notificationIOService;
+
     @Autowired
     private NotificationServiceImpl notificationService;
 
@@ -181,7 +184,6 @@ public class NotificationServiceImplTest {
         notificationService.notifyWinnersPayments();
 
         verifyZeroInteractions(winnersService);
-        verify(citizenDAOMock, times(1)).findWinnersToNotify(Mockito.anyLong(),Mockito.anyLong(),Mockito.anyList(),Mockito.anyLong(),Mockito.anyLong());
     }
 
 }
