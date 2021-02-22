@@ -77,4 +77,9 @@ public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long> {
                                      @Param("offset") Long offset,
                                      @Param("limit") Long limit);
 
+    @Query(nativeQuery = true, value = "SELECT * from update_ranking_with_milestone(:awardPeriodId, :offset, :limit)")
+    Integer updateRankingMilestone(@Param("awardPeriodId") Long awardPeriodId,
+                                   @Param("offset") Integer offset,
+                                   @Param("limit") Integer limit);
+
 }
