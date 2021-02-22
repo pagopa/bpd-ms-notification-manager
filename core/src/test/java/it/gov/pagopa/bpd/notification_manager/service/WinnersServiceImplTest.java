@@ -1,6 +1,7 @@
 package it.gov.pagopa.bpd.notification_manager.service;
 
 import it.gov.pagopa.bpd.notification_manager.connector.WinnersSftpConnector;
+import it.gov.pagopa.bpd.notification_manager.connector.jpa.AwardWinnerErrorDAO;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.CitizenDAO;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.WinningCitizen;
 import org.junit.Test;
@@ -46,6 +47,8 @@ public class WinnersServiceImplTest {
 
     @MockBean
     private CitizenDAO citizenDAOMock;
+    @MockBean
+    private AwardWinnerErrorDAO awardWinnerErrorDAO;
     @MockBean
     private WinnersSftpConnector winnersSftpConnectorMock;
     @Autowired

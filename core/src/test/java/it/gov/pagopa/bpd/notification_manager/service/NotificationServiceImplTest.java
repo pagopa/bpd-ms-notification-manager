@@ -5,7 +5,9 @@ import it.gov.pagopa.bpd.notification_manager.connector.award_period.model.Award
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.NotificationRestConnector;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.NotificationDTO;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.NotificationResource;
+import it.gov.pagopa.bpd.notification_manager.connector.jpa.AwardWinnerErrorDAO;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.CitizenDAO;
+import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.WinningCitizen;
 import it.gov.pagopa.bpd.notification_manager.mapper.NotificationDtoMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,6 +22,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
@@ -39,11 +42,17 @@ public class NotificationServiceImplTest {
     @MockBean
     private CitizenDAO citizenDAOMock;
 
+    @MockBean
+    private AwardWinnerErrorDAO awardWinnerErrorDAO;
+
     @SpyBean
     private NotificationDtoMapper notificationDtoMapper;
 
     @MockBean
     private WinnersService winnersService;
+
+    @MockBean
+    private NotificationIOService notificationIOService;
 
     @Autowired
     private NotificationServiceImpl notificationService;
@@ -97,6 +106,22 @@ public class NotificationServiceImplTest {
 
         BDDMockito.when(winnersService.sendWinners(Mockito.any(Long.class), Mockito.anyInt(), Mockito.any(), Mockito.any(LocalDateTime.class), Mockito.anyInt()))
                 .thenAnswer(invocation -> 0);
+
+        BDDMockito.when(citizenDAOMock.findWinnersToNotify(Mockito.anyLong(),Mockito.anyLong(),Mockito.anyList(),Mockito.anyLong(),Mockito.anyLong()))
+                .thenAnswer(invocation -> {
+                    List<WinningCitizen> result = new ArrayList<>();
+                    WinningCitizen citizen = new WinningCitizen();
+                    citizen.setFiscalCode("allowed-fiscal-code");
+                    citizen.setEsitoBonifico("OK");
+                    citizen.setToNotify(Boolean.TRUE);
+                    citizen.setNotifyTimes(0L);
+                    citizen.setAmount(BigDecimal.valueOf(50));
+                    citizen.setBankTransferDate(LocalDate.now());
+                    citizen.setCro("cro");
+
+                    result.add(citizen);
+                    return result;
+                });
     }
 
     @Test
@@ -152,6 +177,13 @@ public class NotificationServiceImplTest {
 
         verifyZeroInteractions(winnersService);
         verify(awardPeriodRestClientMock, only()).findAllAwardPeriods();
+    }
+
+    @Test
+    public void testNotifyWinners() throws IOException{
+        notificationService.notifyWinnersPayments();
+
+        verifyZeroInteractions(winnersService);
     }
 
 }

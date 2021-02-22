@@ -2,18 +2,24 @@ package it.gov.pagopa.bpd.notification_manager.service;
 
 
 import eu.sia.meda.service.BaseService;
+import feign.FeignException;
 import it.gov.pagopa.bpd.notification_manager.connector.award_period.AwardPeriodRestClient;
 import it.gov.pagopa.bpd.notification_manager.connector.award_period.model.AwardPeriod;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.NotificationRestConnector;
+import it.gov.pagopa.bpd.notification_manager.connector.io_backend.exception.NotifyTooManyRequestException;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.NotificationDTO;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.NotificationResource;
+import it.gov.pagopa.bpd.notification_manager.connector.jpa.AwardWinnerErrorDAO;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.CitizenDAO;
+import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.AwardWinnerError;
+import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.WinningCitizen;
 import it.gov.pagopa.bpd.notification_manager.mapper.NotificationDtoMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -22,7 +28,10 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.Period;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -31,6 +40,8 @@ import java.util.List;
 @Service
 @Slf4j
 class NotificationServiceImpl extends BaseService implements NotificationService {
+
+    private static final DateTimeFormatter ONLY_DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final CitizenDAO citizenDAO;
     private final NotificationDtoMapper notificationDtoMapper;
@@ -42,6 +53,8 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     private final String markdown;
     private final Long maxRow;
     private final boolean deleteTmpFilesEnable;
+    private final NotificationIOService notificationIOService;
+    private final int notifyLoopNumber;
 
     @Autowired
     NotificationServiceImpl(
@@ -54,7 +67,10 @@ class NotificationServiceImpl extends BaseService implements NotificationService
             @Value("${core.NotificationService.notifyUnsetPayoffInstr.subject}") String subject,
             @Value("${core.NotificationService.notifyUnsetPayoffInstr.markdown}") String markdown,
             @Value("${core.NotificationService.findWinners.maxRow}") Long maxRow,
-            @Value("${core.NotificationService.findWinners.deleteTmpFiles.enable}") boolean deleteTmpFilesEnable) {
+            @Value("${core.NotificationService.findWinners.deleteTmpFiles.enable}") boolean deleteTmpFilesEnable,
+            @Value("${core.NotificationService.notifyWinners.loopNumber}") int notifyLoopNumber,
+            NotificationIOService notificationIOService
+            ) {
         this.citizenDAO = citizenDAO;
         this.notificationDtoMapper = notificationDtoMapper;
         this.notificationRestConnector = notificationRestConnector;
@@ -65,6 +81,8 @@ class NotificationServiceImpl extends BaseService implements NotificationService
         this.markdown = markdown;
         this.maxRow = maxRow;
         this.deleteTmpFilesEnable = deleteTmpFilesEnable;
+        this.notificationIOService=notificationIOService;
+        this.notifyLoopNumber=notifyLoopNumber;
     }
 
 
@@ -204,6 +222,23 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     public void testConnection() throws IOException {
         winnersService.testConnection();
     }
+
+    @Override
+    @Scheduled(cron = "${core.NotificationService.notifyWinners.scheduler}")
+    public void notifyWinnersPayments() throws IOException {
+        int itemCount = 0;
+        int loopNumber = 0;
+
+        do{
+            if(notifyLoopNumber==-1 || loopNumber<notifyLoopNumber){
+                itemCount=notificationIOService.notifyWinnersPayments();
+                loopNumber++;
+            }else{
+                itemCount = 0;
+            }
+        } while(itemCount>0);
+    }
+
 
 }
 
