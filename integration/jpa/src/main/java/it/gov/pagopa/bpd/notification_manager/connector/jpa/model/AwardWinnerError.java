@@ -14,7 +14,7 @@ public class AwardWinnerError extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "bpd_award_bpd_ward_error_id_seq")
-    @SequenceGenerator(name="bpd_award_bpd_ward_error_id_seq",sequenceName = "bpd_award_bpd_ward_error_id_seq")
+    @SequenceGenerator(name="bpd_award_bpd_ward_error_id_seq", sequenceName = "bpd_award_bpd_ward_error_id_seq", allocationSize = 1)
     @Column(name = "id_error_n")
     private Long idError;
 
