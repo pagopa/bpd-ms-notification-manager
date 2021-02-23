@@ -72,15 +72,15 @@ public class NotificationServiceImplTest {
     }
 
     @Test
-    public void testUpdateRanking() throws IOException {
+    public void testUpdateRanking() {
 
         notificationService.updateRanking();
-        verify(citizenDAOMock, only()).updateRanking();
         verify(citizenDAOMock, times(1)).updateRanking();
+        verify(citizenDAOMock, times(1)).updateRankingMilestone(Mockito.eq(1L), Mockito.eq(0), Mockito.eq(10000));
     }
 
     @Test
-    public void testUpdateWinners() throws IOException {
+    public void testUpdateWinners() {
 
         notificationService.updateWinners(Mockito.anyLong());
         verify(citizenDAOMock, only()).updateWinners(Mockito.anyLong());
