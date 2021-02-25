@@ -44,4 +44,8 @@ public interface BpdNotificationManagerController {
     @GetMapping(value = "/updateRanking", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
     void updateRanking() throws IOException;
+
+    @GetMapping(value = "/updateRankingMilestone", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    void updateRankingMilestone() throws IOException;
 }
