@@ -76,7 +76,7 @@ public class NotificationServiceImplTest {
 
         notificationService.updateRanking();
         verify(citizenDAOMock, times(1)).updateRanking();
-        verify(citizenDAOMock, times(1)).updateRankingMilestone(Mockito.eq(1L), Mockito.eq(0), Mockito.eq(10000));
+        verify(citizenDAOMock, times(1)).updateRankingMilestone(Mockito.eq(0), Mockito.eq(10000));
     }
 
     @Test
