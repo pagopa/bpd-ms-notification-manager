@@ -127,6 +127,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
             logger.info("Executed procedure: updateRanking");
         }
 
+        log.trace("From updateRanking call updateRankingMilestone");
         updateRankingMilestone();
 
     }
@@ -139,7 +140,9 @@ class NotificationServiceImpl extends BaseService implements NotificationService
         int offset = 0;
         int citizenCount;
         do {
+            logger.trace("Calling updateRankingMilestone with offset: " + offset);
             citizenCount = citizenDAO.updateRankingMilestone(offset, limitUpdateRankingMilestone);
+            logger.trace("Calling updateRankingMilestone with citizenCount in this loop: " + citizenCount);
             offset += citizenCount;
         } while(citizenCount >= limitUpdateRankingMilestone);
         if (logger.isInfoEnabled()) {
