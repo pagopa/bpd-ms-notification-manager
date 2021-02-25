@@ -51,4 +51,9 @@ class BpdNotificationManagerControllerImpl extends StatelessController implement
     public void updateRanking() throws IOException {
         notificationService.updateRanking();
     }
+
+    @Override
+    public void updateRankingMilestone() throws IOException {
+        notificationService.updateRankingMilestone();
+    }
 }

@@ -55,7 +55,6 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     private final boolean deleteTmpFilesEnable;
     private final NotificationIOService notificationIOService;
     private final int notifyLoopNumber;
-    private final Long awardPeriodUpdateRankingMilestone;
     private final Integer limitUpdateRankingMilestone;
 
     @Autowired
@@ -72,7 +71,6 @@ class NotificationServiceImpl extends BaseService implements NotificationService
             @Value("${core.NotificationService.findWinners.deleteTmpFiles.enable}") boolean deleteTmpFilesEnable,
             @Value("${core.NotificationService.notifyWinners.loopNumber}") int notifyLoopNumber,
             NotificationIOService notificationIOService,
-            @Value("${core.NotificationService.updateRanking.awardPeriodUpdateRankingMilestone}") Long awardPeriodUpdateRankingMilestone,
             @Value("${core.NotificationService.updateRanking.limitUpdateRankingMilestone}") Integer limitUpdateRankingMilestone) {
         this.citizenDAO = citizenDAO;
         this.notificationDtoMapper = notificationDtoMapper;
@@ -86,7 +84,6 @@ class NotificationServiceImpl extends BaseService implements NotificationService
         this.deleteTmpFilesEnable = deleteTmpFilesEnable;
         this.notificationIOService=notificationIOService;
         this.notifyLoopNumber=notifyLoopNumber;
-        this.awardPeriodUpdateRankingMilestone = awardPeriodUpdateRankingMilestone;
         this.limitUpdateRankingMilestone = limitUpdateRankingMilestone;
     }
 
@@ -130,19 +127,24 @@ class NotificationServiceImpl extends BaseService implements NotificationService
             logger.info("Executed procedure: updateRanking");
         }
 
+        updateRankingMilestone();
+
+    }
+
+    @Override
+    public void updateRankingMilestone() {
         if (logger.isInfoEnabled()) {
             logger.info("Executing procedure: updateRankingMilestone");
         }
         int offset = 0;
         int citizenCount;
         do {
-            citizenCount = citizenDAO.updateRankingMilestone(awardPeriodUpdateRankingMilestone, offset, limitUpdateRankingMilestone);
+            citizenCount = citizenDAO.updateRankingMilestone(offset, limitUpdateRankingMilestone);
             offset += citizenCount;
         } while(citizenCount >= limitUpdateRankingMilestone);
         if (logger.isInfoEnabled()) {
             logger.info("Executed procedure: updateRankingMilestone");
         }
-
     }
 
     @Override
