@@ -13,6 +13,8 @@ public interface NotificationService {
 
     void updateRanking() throws IOException;
 
+    void updateRankingMilestone() throws IOException;
+
     void updateWinners(Long awardPeriodId) throws IOException;
 
     void sendWinners(Long awardPeriodId) throws IOException;
