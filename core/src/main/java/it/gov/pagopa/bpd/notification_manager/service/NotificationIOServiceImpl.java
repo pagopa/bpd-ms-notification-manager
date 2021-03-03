@@ -28,6 +28,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.math.BigDecimal.ROUND_HALF_DOWN;
+
 @Service
 @Slf4j
 public class NotificationIOServiceImpl extends BaseService implements NotificationIOService{
@@ -115,16 +117,39 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
                 toNotifyWin.setNotifyTimes(Long.sum(toNotifyWin.getNotifyTimes()!=null?
                         toNotifyWin.getNotifyTimes() : 0L,1L));
             }catch(FeignException e){
-                if(log.isErrorEnabled()){
+                if(log.isErrorEnabled() && e!=null && e.contentUTF8()!=null){
                     log.error(e.contentUTF8());
+                }else{
+                    log.error(e.getMessage());
                 }
 
                 AwardWinnerError winnerError = new AwardWinnerError();
                 winnerError.setId(toNotifyWin.getId());
                 winnerError.setFiscalCode(toNotifyWin.getFiscalCode());
                 winnerError.setAwardPeriodId(toNotifyWin.getAwardPeriodId());
-                winnerError.setErrorCode(String.valueOf(e.status()));
-                winnerError.setErrorMessage(e.contentUTF8());
+                winnerError.setErrorCode(String.valueOf((e!=null) ? e.status() : "500"));
+                winnerError.setErrorMessage((e!=null && e.contentUTF8()!=null) ? e.contentUTF8() : "ErrorContentUTF8 is null");
+                winnerError.setEnabled(Boolean.TRUE);
+                winnerError.setInsertUser("notifyWinnersPayments");
+                winnerError.setInsertDate(OffsetDateTime.now());
+
+                awardWinnerErrorDAO.save(winnerError);
+                errorCount+=1;
+
+                toNotifyWin.setToNotify(Boolean.TRUE);
+                toNotifyWin.setNotifyTimes(Long.sum(toNotifyWin.getNotifyTimes()!=null?
+                        toNotifyWin.getNotifyTimes() : 0L,1L));
+            } catch(Exception e){
+                if(log.isErrorEnabled() && e!=null){
+                    log.error(e.getMessage());
+                }
+
+                AwardWinnerError winnerError = new AwardWinnerError();
+                winnerError.setId(toNotifyWin.getId());
+                winnerError.setFiscalCode(toNotifyWin.getFiscalCode());
+                winnerError.setAwardPeriodId(toNotifyWin.getAwardPeriodId());
+                winnerError.setErrorCode("500");
+                winnerError.setErrorMessage(e!=null ? e.getMessage() : "GenericError");
                 winnerError.setEnabled(Boolean.TRUE);
                 winnerError.setInsertUser("notifyWinnersPayments");
                 winnerError.setInsertDate(OffsetDateTime.now());
@@ -155,14 +180,14 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
     private String getNotifyMarkdown(WinningCitizen toNotifyWin){
         String retVal= null;
         if(ORDINE_OK.equals(toNotifyWin.getEsitoBonifico())){
-            retVal=this.notifyMarkdownOK.replace("{{amount}}",toNotifyWin.getAmount()!=null ? NumberFormat.getInstance().format(toNotifyWin.getAmount()) : MARKDOWN_NA)
+            retVal=this.notifyMarkdownOK.replace("{{amount}}",toNotifyWin.getAmount()!=null ? toNotifyWin.getAmount().setScale(2, ROUND_HALF_DOWN).toString().replace(".",",") : MARKDOWN_NA)
                     .replace("{{executionDate}}",toNotifyWin.getBankTransferDate()!=null ? toNotifyWin.getBankTransferDate().format(ONLY_DATE_FORMATTER) : MARKDOWN_NA)
                     .replace("{{cro}}",toNotifyWin.getCro()!=null ? toNotifyWin.getCro() : MARKDOWN_NA)
                     .replace("{{IBAN}}",toNotifyWin.getPayoffInstr())
                     .replace("{{startDate}}", toNotifyWin.getAwardPeriodStart().format(ONLY_DATE_FORMATTER))
                     .replace("{{endDate}}", toNotifyWin.getAwardPeriodEnd().format(ONLY_DATE_FORMATTER));
         }else{
-            retVal=this.notifyMarkdownKO.replace("{{amount}}",toNotifyWin.getAmount()!=null ? NumberFormat.getInstance().format(toNotifyWin.getAmount()) : MARKDOWN_NA)
+            retVal=this.notifyMarkdownKO.replace("{{amount}}",toNotifyWin.getAmount()!=null ? toNotifyWin.getAmount().setScale(2, ROUND_HALF_DOWN).toString().replace(".",",") : MARKDOWN_NA)
                     .replace("{{executionDate}}",toNotifyWin.getBankTransferDate()!=null ? toNotifyWin.getBankTransferDate().format(ONLY_DATE_FORMATTER) : MARKDOWN_NA)
                     .replace("{{resultReason}}",toNotifyWin.getResultReason()!=null ? toNotifyWin.getResultReason() : MARKDOWN_NA)
                     .replace("{{cro}}",toNotifyWin.getCro()!=null ? toNotifyWin.getCro() : MARKDOWN_NA);
