@@ -56,7 +56,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     private final NotificationIOService notificationIOService;
     private final int notifyLoopNumber;
     private final int LIMIT_UPDATE_RANKING_MILESTONE;
-    private final int MAX_CITIZEN_UPDATE_RANKING_MILESTONE;
+    private final Integer MAX_CITIZEN_UPDATE_RANKING_MILESTONE;
     private final int THREAD_POOL;
 
     @Autowired
@@ -74,7 +74,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
             @Value("${core.NotificationService.notifyWinners.loopNumber}") int notifyLoopNumber,
             NotificationIOService notificationIOService,
             @Value("${core.NotificationService.updateRanking.limitUpdateRankingMilestone}") int LIMIT_UPDATE_RANKING_MILESTONE,
-            @Value("${core.NotificationService.updateRanking.maxCitizenUpdateRankingMilestone}") int MAX_CITIZEN_UPDATE_RANKING_MILESTONE,
+            @Value("${core.NotificationService.updateRanking.maxCitizenUpdateRankingMilestone}") Integer MAX_CITIZEN_UPDATE_RANKING_MILESTONE,
             @Value("${core.NotificationService.updateRanking.threadPoolRankingMilestone}") int THREAD_POOL) {
         this.citizenDAO = citizenDAO;
         this.notificationDtoMapper = notificationDtoMapper;
@@ -173,7 +173,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
 
                 totalCitizenElab += listResult.stream().reduce(0, Integer::sum);
                 logger.debug("Total citizen updated: {}", totalCitizenElab);
-            } while (listResult.stream().reduce(0, Integer::sum) >= LIMIT_UPDATE_RANKING_MILESTONE && totalCitizenElab < MAX_CITIZEN_UPDATE_RANKING_MILESTONE);
+            } while (listResult.stream().reduce(0, Integer::sum) >= LIMIT_UPDATE_RANKING_MILESTONE && (MAX_CITIZEN_UPDATE_RANKING_MILESTONE == null || totalCitizenElab < MAX_CITIZEN_UPDATE_RANKING_MILESTONE));
 
         } finally {
             if (executor != null){
