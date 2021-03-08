@@ -25,14 +25,10 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @see NotificationService
@@ -58,6 +54,9 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     private final int LIMIT_UPDATE_RANKING_MILESTONE;
     private final Integer MAX_CITIZEN_UPDATE_RANKING_MILESTONE;
     private final int THREAD_POOL;
+    private final ExecutorService executor;
+    private AtomicInteger totalCitizenElab;
+    private AtomicBoolean CHECK_CONTINUE_UPDATE_RANKING_MILESTONE;
 
     @Autowired
     NotificationServiceImpl(
@@ -91,6 +90,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
         this.LIMIT_UPDATE_RANKING_MILESTONE = LIMIT_UPDATE_RANKING_MILESTONE;
         this.MAX_CITIZEN_UPDATE_RANKING_MILESTONE = MAX_CITIZEN_UPDATE_RANKING_MILESTONE;
         this.THREAD_POOL = THREAD_POOL;
+        this.executor = Executors.newFixedThreadPool(THREAD_POOL);
     }
 
 
@@ -138,52 +138,65 @@ class NotificationServiceImpl extends BaseService implements NotificationService
 
     }
 
-    @Override
-    public void updateRankingMilestone() {
+    public void updateRankingMilestone(){
         if (logger.isInfoEnabled()) {
             logger.info("Executing procedure: updateRankingMilestone");
         }
+
         ExecutorService executor = null;
+        CHECK_CONTINUE_UPDATE_RANKING_MILESTONE = new AtomicBoolean(true);
+        totalCitizenElab = new AtomicInteger(0);
+
         try {
             executor = Executors.newFixedThreadPool(THREAD_POOL);
             OffsetDateTime timestamp = OffsetDateTime.now();
 
-            int totalCitizenElab = 0;
-            List<Future<Integer>> futureListResult;
-            Set<Callable<Integer>> callables = new HashSet<>();
-            List<Integer> listResult = new ArrayList<>();
-            do {
-                callables.clear();
-                listResult.clear();
-                for (int threadCount = 0; threadCount < THREAD_POOL; threadCount++) {
-                    callables.add(() ->
-                            citizenDAO.updateRankingMilestone(0,
-                                    LIMIT_UPDATE_RANKING_MILESTONE, timestamp));
-                }
+            for (int threadCount = 0; threadCount < THREAD_POOL; threadCount++) {
 
-                try{
-                    futureListResult = executor.invokeAll(callables);
-                    for (Future<Integer> future : futureListResult){
-                        listResult.add(future.get());
+                executor.submit(() -> {
+                    Future<Integer> future = CompletableFuture.supplyAsync(() -> citizenDAO.updateRankingMilestone(0,
+                            LIMIT_UPDATE_RANKING_MILESTONE, timestamp));
+                    try {
+                        totalCitizenElab.getAndAdd(future.get());
+                        logger.debug("Total citizen updated: {}", totalCitizenElab);
+                        checkFinish(future.get(), timestamp);
+                    } catch (InterruptedException | ExecutionException e) {
+                        logger.error("Error during excecution of updateRankingMilestone, Total citizen updated before error: {}", totalCitizenElab);
+                        throw new RuntimeException();
                     }
-                } catch (Exception e) {
-                    logger.error("Error during excecution of updateRankingMilestone, Total citizen updated before error: {}", totalCitizenElab);
-                    throw new RuntimeException();
-                }
+                });
 
-                totalCitizenElab += listResult.stream().reduce(0, Integer::sum);
-                logger.debug("Total citizen updated: {}", totalCitizenElab);
-            } while (listResult.stream().reduce(0, Integer::sum) >= LIMIT_UPDATE_RANKING_MILESTONE && (MAX_CITIZEN_UPDATE_RANKING_MILESTONE == null || totalCitizenElab < MAX_CITIZEN_UPDATE_RANKING_MILESTONE));
-
-        } finally {
-            if (executor != null){
+            }
+        }finally {
+            if (executor != null) {
                 executor.shutdown();
             }
         }
 
-
         if (logger.isInfoEnabled()) {
             logger.info("Executed procedure: updateRankingMilestone");
+        }
+    }
+
+    private void checkFinish(Integer citizenElab, OffsetDateTime timestamp){
+
+        if (CHECK_CONTINUE_UPDATE_RANKING_MILESTONE.get()) {
+            if (citizenElab >= LIMIT_UPDATE_RANKING_MILESTONE && (MAX_CITIZEN_UPDATE_RANKING_MILESTONE == null || totalCitizenElab.get() < MAX_CITIZEN_UPDATE_RANKING_MILESTONE)) {
+                executor.submit(() -> {
+                    Future<Integer> future = CompletableFuture.supplyAsync(() -> citizenDAO.updateRankingMilestone(0,
+                            LIMIT_UPDATE_RANKING_MILESTONE, timestamp));
+                    try {
+                        totalCitizenElab.getAndAdd(future.get());
+                        logger.debug("Total citizen updated: {}", totalCitizenElab);
+                        checkFinish(future.get(), timestamp);
+                    } catch (InterruptedException | ExecutionException e) {
+                        logger.error("Error during excecution of updateRankingMilestone, Total citizen updated before error: {}", totalCitizenElab);
+                        throw new RuntimeException();
+                    }
+                });
+            } else {
+                CHECK_CONTINUE_UPDATE_RANKING_MILESTONE.getAndSet(false);
+            }
         }
     }
 
