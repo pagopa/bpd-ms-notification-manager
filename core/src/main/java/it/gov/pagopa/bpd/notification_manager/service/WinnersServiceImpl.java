@@ -214,7 +214,11 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
                 CSV_DELIMITER +
                 winner.getCheckInstrStatus() +
                 CSV_DELIMITER +
-                winner.getTechnicalAccountHolder();
+                winner.getTechnicalAccountHolder()+
+                CSV_DELIMITER +
+                winner.getTicketId()+
+                CSV_DELIMITER +
+                winner.getRelatedUniqueId();
     }
 
     private File cryptFile(File csvOutputFile) throws IOException, NoSuchProviderException, PGPException {
