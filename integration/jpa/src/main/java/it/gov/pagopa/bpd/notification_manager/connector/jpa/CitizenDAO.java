@@ -28,7 +28,8 @@ public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long> {
                     " WHERE baw.award_period_id_n = :awardPeriodId" +
                     " AND baw.enabled_b = true" +
                     " AND baw.payoff_instr_s IS NOT NULL" +
-                    " AND baw.status_s <> 'SENT'")
+                    " AND baw.status_s <> 'SENT'" +
+                    " AND baw.status_s <> 'INTEGRATION'")
     int countFindWinners(@Param("awardPeriodId") Long awardPeriodId);
 
     @Query(nativeQuery = true,
@@ -38,6 +39,7 @@ public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long> {
                     " AND baw.enabled_b = true" +
                     " AND baw.payoff_instr_s IS NOT NULL" +
                     " AND baw.status_s <> 'SENT'" +
+                    " AND baw.status_s <> 'INTEGRATION'" +
                     " LIMIT :limit")
     List<WinningCitizen> findWinners(@Param("awardPeriodId") Long awardPeriodId,
                                      @Param("limit") Long limit);
@@ -49,6 +51,7 @@ public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long> {
                     " AND baw.enabled_b = true" +
                     " AND baw.payoff_instr_s IS NOT NULL" +
                     " AND baw.status_s <> 'SENT'" +
+                    " AND baw.status_s <> 'INTEGRATION'" +
                     " ORDER BY id_n" +
                     " OFFSET :offset" +
                     " LIMIT :limit")
@@ -63,7 +66,7 @@ public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long> {
                     " AND (:awardPeriodId = -1 OR baw.award_period_id_n = :awardPeriodId)" +
                     " AND baw.payoff_instr_s IS NOT NULL" +
                     " AND baw.amount_n >= 0.01" +
-                    " AND baw.status_s not in ('NEW')" +
+                    " AND baw.status_s not in ('NEW','INTEGRATION')" +
                     " AND baw.to_notify_b is true" +
                     " AND baw.esito_bonifico_s IN (:resultList)" +
                     " AND (:notifyTimesLimit = -1 OR baw.notify_times_n < :notifyTimesLimit)" +
