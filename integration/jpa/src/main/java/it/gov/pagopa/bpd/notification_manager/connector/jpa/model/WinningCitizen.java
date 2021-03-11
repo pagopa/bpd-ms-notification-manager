@@ -95,6 +95,6 @@ public class WinningCitizen extends BaseEntity {
     private Long relatedUniqueId;
 
     public enum Status {
-        NEW, SENT, RECOVERY
+        NEW, SENT, RECOVERY, INTEGRATION
     }
 }
