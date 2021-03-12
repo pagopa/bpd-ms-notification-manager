@@ -88,7 +88,13 @@ public class WinningCitizen extends BaseEntity {
     @Column(name = "notify_id_s")
     private String notifyId;
 
+    @Column(name = "ticket_id_n")
+    private Long ticketId;
+
+    @Column(name = "related_id_n")
+    private Long relatedUniqueId;
+
     public enum Status {
-        NEW, SENT, RECOVERY
+        NEW, SENT, RECOVERY, INTEGRATION
     }
 }
