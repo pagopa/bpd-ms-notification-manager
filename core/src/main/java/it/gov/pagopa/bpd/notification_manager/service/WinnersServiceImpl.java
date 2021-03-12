@@ -20,7 +20,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchProviderException;
 import java.text.DecimalFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -212,11 +214,11 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
                 CSV_DELIMITER +
                 winner.getCheckInstrStatus() +
                 CSV_DELIMITER +
-                winner.getTechnicalAccountHolder() +
+                winner.getTechnicalAccountHolder()+
                 CSV_DELIMITER +
-                winner.getTicketId() +
+                winner.getTicketId()!=null ? winner.getTicketId().toString() : ""+
                 CSV_DELIMITER +
-                winner.getRelatedUniqueId();
+                winner.getRelatedUniqueId() != null ? winner.getRelatedUniqueId().toString() : "";
     }
 
     private File cryptFile(File csvOutputFile) throws IOException, NoSuchProviderException, PGPException {
