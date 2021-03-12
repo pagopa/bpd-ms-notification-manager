@@ -186,6 +186,9 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
                     .append(winner.getFiscalCode());
         }
 
+        String ticketId = winner.getTicketId()!=null ? winner.getTicketId().toString() : new String("");
+        String relatedId= winner.getRelatedUniqueId() != null ? winner.getRelatedUniqueId().toString() : new String("");
+
         return NINE_DIGITS_FORMAT.format(winner.getId()) +
                 CSV_DELIMITER +
                 winner.getAccountHolderFiscalCode() +
@@ -216,9 +219,9 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
                 CSV_DELIMITER +
                 winner.getTechnicalAccountHolder()+
                 CSV_DELIMITER +
-                winner.getTicketId()!=null ? winner.getTicketId().toString() : ""+
+                ticketId +
                 CSV_DELIMITER +
-                winner.getRelatedUniqueId() != null ? winner.getRelatedUniqueId().toString() : "";
+                relatedId;
     }
 
     private File cryptFile(File csvOutputFile) throws IOException, NoSuchProviderException, PGPException {
