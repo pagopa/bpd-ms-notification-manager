@@ -112,6 +112,7 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
                 toNotifyWin.setNotifyTimes(Long.sum(toNotifyWin.getNotifyTimes() != null ?
                         toNotifyWin.getNotifyTimes() : 0L, 1L));
             } catch (FeignException e) {
+
                 try {
                     if (log.isErrorEnabled()) {
                         log.error(e.contentUTF8());
@@ -131,6 +132,7 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
                 toNotifyWin.setNotifyTimes(Long.sum(toNotifyWin.getNotifyTimes() != null ?
                         toNotifyWin.getNotifyTimes() : 0L, 1L));
             } catch (Exception e) {
+              
                 if (log.isErrorEnabled() && e != null) {
                     log.error(e.getMessage());
                 }
