@@ -9,6 +9,7 @@
     <groupId>it.gov.pagopa.bpd.ms.notification_manager.integration</groupId>
     <artifactId>bpd-ms-notification-manager-integration-rest</artifactId>
     <version>1.5.0-rc1</version>
+
     <dependencies>
         <dependency>
             <groupId>it.gov.pagopa.bpd.commons.integration</groupId>
