@@ -27,7 +27,7 @@ import static java.math.BigDecimal.ROUND_HALF_DOWN;
 
 @Service
 @Slf4j
-public class NotificationIOServiceImpl extends BaseService implements NotificationIOService{
+public class NotificationIOServiceImpl extends BaseService implements NotificationIOService {
 
     private static final DateTimeFormatter ONLY_DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
@@ -43,8 +43,8 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
     private final String notifySubjectKO;
     private final Integer notifyUpdateRows;
     private final AwardWinnerErrorDAO awardWinnerErrorDAO;
-    private static final String MARKDOWN_NA="n.a.";
-    private static final String ORDINE_OK="ORDINE ESEGUITO";
+    private static final String MARKDOWN_NA = "n.a.";
+    private static final String ORDINE_OK = "ORDINE ESEGUITO";
     private final List<String> notifyResultList;
 
     @Autowired
@@ -67,15 +67,15 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
         this.notificationDtoMapper = notificationDtoMapper;
         this.notificationRestConnector = notificationRestConnector;
         this.timeToLive = timeToLive;
-        this.maxNotifyRow=maxNotifyRow;
-        this.maxNotifyTimes=maxNotifyTimes!=null ? maxNotifyTimes : -1L;
-        this.notifyMarkdownOK=notifyMarkdownOK;
-        this.notifyMarkdownKO=notifyMarkdownKO;
-        this.notifySubjectOK=notifySubjectOK;
-        this.notifySubjectKO=notifySubjectKO;
-        this.notifyUpdateRows=notifyUpdateRows;
-        this.awardWinnerErrorDAO=awardWinnerErrorDAO;
-        this.notifyResultList=notifyResultList;
+        this.maxNotifyRow = maxNotifyRow;
+        this.maxNotifyTimes = maxNotifyTimes != null ? maxNotifyTimes : -1L;
+        this.notifyMarkdownOK = notifyMarkdownOK;
+        this.notifyMarkdownKO = notifyMarkdownKO;
+        this.notifySubjectOK = notifySubjectOK;
+        this.notifySubjectKO = notifySubjectKO;
+        this.notifyUpdateRows = notifyUpdateRows;
+        this.awardWinnerErrorDAO = awardWinnerErrorDAO;
+        this.notifyResultList = notifyResultList;
     }
 
     @Override
@@ -86,11 +86,11 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
         }
         int notityCount = 0;
         int errorCount = 0;
-        List<AwardWinnerError> errorRecords=new ArrayList<AwardWinnerError>();
+        List<AwardWinnerError> errorRecords = new ArrayList<AwardWinnerError>();
 
-        List<WinningCitizen> winners = citizenDAO.findWinnersToNotify(-1L, maxNotifyTimes, notifyResultList,0L, maxNotifyRow);
+        List<WinningCitizen> winners = citizenDAO.findWinnersToNotify(-1L, maxNotifyTimes, notifyResultList, 0L, maxNotifyRow);
 
-        for(WinningCitizen toNotifyWin : winners){
+        for (WinningCitizen toNotifyWin : winners) {
             try {
                 //                if (notificationRestConnector.profiles(toNotifyWin.getFiscalCode()) != null) {
                 String notifyMarkdown = getNotifyMarkdown(toNotifyWin);
@@ -99,19 +99,20 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
                 NotificationDTO dto = notificationDtoMapper.NotificationDtoMapper(
                         toNotifyWin.getFiscalCode(), timeToLive, notifySubject, notifyMarkdown);
                 NotificationResource resource = notificationRestConnector.notify(dto);
-                toNotifyWin.setNotifyTimes(Long.sum(toNotifyWin.getNotifyTimes()!=null?
-                        toNotifyWin.getNotifyTimes() : 0L,1L));
+                toNotifyWin.setNotifyTimes(Long.sum(toNotifyWin.getNotifyTimes() != null ?
+                        toNotifyWin.getNotifyTimes() : 0L, 1L));
                 toNotifyWin.setNotifyId(resource.getId());
 
                 notityCount += 1;
                 //                }
                 toNotifyWin.setToNotify(Boolean.FALSE);
 
-            }catch(NotifyTooManyRequestException e){
+            } catch (NotifyTooManyRequestException e) {
                 toNotifyWin.setToNotify(Boolean.TRUE);
-                toNotifyWin.setNotifyTimes(Long.sum(toNotifyWin.getNotifyTimes()!=null?
-                        toNotifyWin.getNotifyTimes() : 0L,1L));
-            }catch(FeignException e){
+                toNotifyWin.setNotifyTimes(Long.sum(toNotifyWin.getNotifyTimes() != null ?
+                        toNotifyWin.getNotifyTimes() : 0L, 1L));
+            } catch (FeignException e) {
+
                 try {
                     if (log.isErrorEnabled()) {
                         log.error(e.contentUTF8());
@@ -130,19 +131,20 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
                 toNotifyWin.setToNotify(Boolean.TRUE);
                 toNotifyWin.setNotifyTimes(Long.sum(toNotifyWin.getNotifyTimes() != null ?
                         toNotifyWin.getNotifyTimes() : 0L, 1L));
-            } catch(Exception e){
-                if(log.isErrorEnabled() && e!=null){
+            } catch (Exception e) {
+              
+                if (log.isErrorEnabled() && e != null) {
                     log.error(e.getMessage());
                 }
 
                 AwardWinnerError winnerError = getErrorRow(toNotifyWin, e);
 
                 awardWinnerErrorDAO.save(winnerError);
-                errorCount+=1;
+                errorCount += 1;
 
                 toNotifyWin.setToNotify(Boolean.TRUE);
-                toNotifyWin.setNotifyTimes(Long.sum(toNotifyWin.getNotifyTimes()!=null?
-                        toNotifyWin.getNotifyTimes() : 0L,1L));
+                toNotifyWin.setNotifyTimes(Long.sum(toNotifyWin.getNotifyTimes() != null ?
+                        toNotifyWin.getNotifyTimes() : 0L, 1L));
             }
 
             toNotifyWin.setUpdateUser("notifyWinnersPayments");
@@ -154,23 +156,23 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
         if (logger.isInfoEnabled()) {
             logger.info("NotificationManagerServiceImpl.notifyWinnersPayments end " +
                     "- Notified " + notityCount + " citizens"
-                    +(errorCount!=0 ? " - Errors: " + errorCount +" record" : ""));
+                    + (errorCount != 0 ? " - Errors: " + errorCount + " record" : ""));
         }
 
-        return winners!=null && !winners.isEmpty() ? winners.size():0;
+        return winners != null && !winners.isEmpty() ? winners.size() : 0;
     }
 
-    private String getNotifyMarkdown(WinningCitizen toNotifyWin){
-        String retVal= null;
-        if(ORDINE_OK.equals(toNotifyWin.getEsitoBonifico())){
-            retVal=this.notifyMarkdownOK.replace("{{amount}}",toNotifyWin.getAmount()!=null ? toNotifyWin.getAmount().setScale(2, ROUND_HALF_DOWN).toString().replace(".",",") : MARKDOWN_NA)
-                    .replace("{{executionDate}}",toNotifyWin.getBankTransferDate()!=null ? toNotifyWin.getBankTransferDate().format(ONLY_DATE_FORMATTER) : MARKDOWN_NA)
-                    .replace("{{cro}}",toNotifyWin.getCro()!=null ? toNotifyWin.getCro() : MARKDOWN_NA)
-                    .replace("{{IBAN}}",toNotifyWin.getPayoffInstr())
+    private String getNotifyMarkdown(WinningCitizen toNotifyWin) {
+        String retVal = null;
+        if (ORDINE_OK.equals(toNotifyWin.getEsitoBonifico())) {
+            retVal = this.notifyMarkdownOK.replace("{{amount}}", toNotifyWin.getAmount() != null ? toNotifyWin.getAmount().setScale(2, ROUND_HALF_DOWN).toString().replace(".", ",") : MARKDOWN_NA)
+                    .replace("{{executionDate}}", toNotifyWin.getBankTransferDate() != null ? toNotifyWin.getBankTransferDate().format(ONLY_DATE_FORMATTER) : MARKDOWN_NA)
+                    .replace("{{cro}}", toNotifyWin.getCro() != null ? toNotifyWin.getCro() : MARKDOWN_NA)
+                    .replace("{{IBAN}}", toNotifyWin.getPayoffInstr())
                     .replace("{{startDate}}", toNotifyWin.getAwardPeriodStart().format(ONLY_DATE_FORMATTER))
                     .replace("{{endDate}}", toNotifyWin.getAwardPeriodEnd().format(ONLY_DATE_FORMATTER));
-        }else{
-            retVal=this.notifyMarkdownKO.replace("{{amount}}",toNotifyWin.getAmount()!=null ? toNotifyWin.getAmount().setScale(2, ROUND_HALF_DOWN).toString().replace(".",",") : MARKDOWN_NA)
+        } else {
+            retVal = this.notifyMarkdownKO.replace("{{amount}}", toNotifyWin.getAmount() != null ? toNotifyWin.getAmount().setScale(2, ROUND_HALF_DOWN).toString().replace(".", ",") : MARKDOWN_NA)
                     .replace("{{executionDate}}", toNotifyWin.getBankTransferDate() != null ? toNotifyWin.getBankTransferDate().format(ONLY_DATE_FORMATTER) : MARKDOWN_NA)
                     .replace("{{resultReason}}", toNotifyWin.getResultReason() != null ? toNotifyWin.getResultReason() : MARKDOWN_NA)
                     .replace("{{cro}}", toNotifyWin.getCro() != null ? toNotifyWin.getCro() : MARKDOWN_NA);
