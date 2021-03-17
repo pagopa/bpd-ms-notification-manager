@@ -186,6 +186,12 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
                     .append(winner.getFiscalCode());
         }
 
+
+        if (winner.getIssuerCardId()!=null) {
+            paymentReasonBuilder.append(PAYMENT_REASON_DELIMITER)
+                    .append(winner.getIssuerCardId());
+        }
+
         String ticketId = winner.getTicketId()!=null ? winner.getTicketId().toString() : new String("");
         String relatedId= winner.getRelatedUniqueId() != null ? winner.getRelatedUniqueId().toString() : new String("");
 
