@@ -38,14 +38,15 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
     private final Long maxNotifyRow;
     private final Long maxNotifyTimes;
     private final String notifyMarkdownOK;
+    private final String notifyMarkdownTechnicalOK;
     private final String notifyMarkdownKO;
+    private final String notifyMarkdownTechnicalKO;
     private final String notifySubjectOK;
     private final String notifySubjectKO;
     private static final String MARKDOWN_NA = "n.a.";
     private final Integer notifyUpdateRows;
     private final AwardWinnerErrorDAO awardWinnerErrorDAO;
     private static final String ORDINE_OK = "ORDINE ESEGUITO";
-    private final String notifyMarkdownTechnicalKO;
     private final List<String> notifyResultList;
 
     @Autowired
@@ -57,10 +58,9 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
             @Value("${core.NotificationService.notifyWinners.maxRow}") Long maxNotifyRow,
             @Value("${core.NotificationService.notifyWinners.maxNotifyTry}") Long maxNotifyTimes,
             @Value("${core.NotificationService.notifyWinners.markdown.ok}") String notifyMarkdownOK,
+            @Value("${core.NotificationService.notifyWinners.markdown.ok.tech}") String notifyMarkdownTechnicalOK,
             @Value("${core.NotificationService.notifyWinners.markdown.ko}") String notifyMarkdownKO,
-
             @Value("${core.NotificationService.notifyWinners.markdown.ko.tech}") String notifyMarkdownTechnicalKO,
-
             @Value("${core.NotificationService.notifyWinners.subject.ok}") String notifySubjectOK,
             @Value("${core.NotificationService.notifyWinners.subject.ko}") String notifySubjectKO,
             @Value("${core.NotificationService.notifyWinners.updateRowsNumber}") Integer notifyUpdateRows,
@@ -74,6 +74,7 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
         this.maxNotifyRow = maxNotifyRow;
         this.maxNotifyTimes = maxNotifyTimes != null ? maxNotifyTimes : -1L;
         this.notifyMarkdownOK = notifyMarkdownOK;
+        this.notifyMarkdownTechnicalOK = notifyMarkdownTechnicalOK;
         this.notifyMarkdownKO = notifyMarkdownKO;
         this.notifySubjectOK = notifySubjectOK;
         this.notifySubjectKO = notifySubjectKO;
@@ -180,27 +181,28 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
     private String getNotifyMarkdown(WinningCitizen toNotifyWin) {
         String retVal = null;
         if (ORDINE_OK.equals(toNotifyWin.getEsitoBonifico())) {
-            retVal = this.notifyMarkdownOK.replace("{{amount}}", toNotifyWin.getAmount() != null ? toNotifyWin.getAmount().setScale(2, ROUND_HALF_DOWN).toString().replace(".", ",") : MARKDOWN_NA)
-                    .replace("{{executionDate}}", toNotifyWin.getBankTransferDate() != null ? toNotifyWin.getBankTransferDate().format(ONLY_DATE_FORMATTER) : MARKDOWN_NA)
-                    .replace("{{cro}}", toNotifyWin.getCro() != null ? toNotifyWin.getCro() : MARKDOWN_NA)
-
-                    .replace("{{startDate}}", toNotifyWin.getAwardPeriodStart().format(ONLY_DATE_FORMATTER))
-                    .replace("{{endDate}}", toNotifyWin.getAwardPeriodEnd().format(ONLY_DATE_FORMATTER));
-
-            if (toNotifyWin.getTechnicalAccountHolder() != null) {
-                retVal = retVal.replace("{{IBAN}}", toNotifyWin.getPayoffInstr());
+            if (toNotifyWin.getTechnicalAccountHolder() == null || toNotifyWin.getTechnicalAccountHolder().isEmpty()) {
+                retVal = this.notifyMarkdownOK.replace("{{amount}}", toNotifyWin.getAmount() != null ? toNotifyWin.getAmount().setScale(2, ROUND_HALF_DOWN).toString().replace(".", ",") : MARKDOWN_NA)
+                        .replace("{{executionDate}}", toNotifyWin.getBankTransferDate() != null ? toNotifyWin.getBankTransferDate().format(ONLY_DATE_FORMATTER) : MARKDOWN_NA)
+                        .replace("{{cro}}", toNotifyWin.getCro() != null ? toNotifyWin.getCro() : MARKDOWN_NA)
+                        .replace("{{IBAN}}", toNotifyWin.getPayoffInstr())
+                        .replace("{{startDate}}", toNotifyWin.getAwardPeriodStart().format(ONLY_DATE_FORMATTER))
+                        .replace("{{endDate}}", toNotifyWin.getAwardPeriodEnd().format(ONLY_DATE_FORMATTER));
             } else {
-                retVal = retVal.replace("{{IBAN}}", toNotifyWin.getPayoffInstr());
+                retVal = this.notifyMarkdownTechnicalOK.replace("{{amount}}", toNotifyWin.getAmount() != null ? toNotifyWin.getAmount().setScale(2, ROUND_HALF_DOWN).toString().replace(".", ",") : MARKDOWN_NA)
+                        .replace("{{executionDate}}", toNotifyWin.getBankTransferDate() != null ? toNotifyWin.getBankTransferDate().format(ONLY_DATE_FORMATTER) : MARKDOWN_NA)
+                        .replace("{{cro}}", toNotifyWin.getCro() != null ? toNotifyWin.getCro() : MARKDOWN_NA)
+                        .replace("{{startDate}}", toNotifyWin.getAwardPeriodStart().format(ONLY_DATE_FORMATTER))
+                        .replace("{{endDate}}", toNotifyWin.getAwardPeriodEnd().format(ONLY_DATE_FORMATTER));
             }
         } else {
-            if (toNotifyWin.getTechnicalAccountHolder() == null) {
+            if (toNotifyWin.getTechnicalAccountHolder() == null || toNotifyWin.getTechnicalAccountHolder().isEmpty()) {
                 retVal = this.notifyMarkdownKO.replace("{{amount}}", toNotifyWin.getAmount() != null ? toNotifyWin.getAmount().setScale(2, ROUND_HALF_DOWN).toString().replace(".", ",") : MARKDOWN_NA)
                         .replace("{{executionDate}}", toNotifyWin.getBankTransferDate() != null ? toNotifyWin.getBankTransferDate().format(ONLY_DATE_FORMATTER) : MARKDOWN_NA)
                         .replace("{{resultReason}}", toNotifyWin.getResultReason() != null ? toNotifyWin.getResultReason() : MARKDOWN_NA)
-                        .replace("{{cro}}", toNotifyWin.getCro() != null ? toNotifyWin.getCro() : MARKDOWN_NA);
+                        .replace("{{cro}}", toNotifyWin.getCro() != null ? toNotifyWin.getCro() : MARKDOWN_NA)
+                        .replace("{{IBAN}}", toNotifyWin.getPayoffInstr());
             } else {
-
-//                TODO fix string
                 retVal = this.notifyMarkdownTechnicalKO.replace("{{amount}}", toNotifyWin.getAmount() != null ? toNotifyWin.getAmount().setScale(2, ROUND_HALF_DOWN).toString().replace(".", ",") : MARKDOWN_NA)
                         .replace("{{executionDate}}", toNotifyWin.getBankTransferDate() != null ? toNotifyWin.getBankTransferDate().format(ONLY_DATE_FORMATTER) : MARKDOWN_NA)
                         .replace("{{resultReason}}", toNotifyWin.getResultReason() != null ? toNotifyWin.getResultReason() : MARKDOWN_NA)

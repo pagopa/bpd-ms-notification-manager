@@ -61,6 +61,7 @@ public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long> {
                     " WHERE baw.enabled_b is true" +
                     " AND (:awardPeriodId = -1 OR baw.award_period_id_n = :awardPeriodId)" +
                     " AND baw.payoff_instr_s IS NOT NULL" +
+                    " AND baw.amount_n >= 0.01" +
                     " AND baw.status_s not in ('NEW')" +
                     " AND baw.to_notify_b is true" +
                     " AND baw.esito_bonifico_s IN (:resultList)" +
