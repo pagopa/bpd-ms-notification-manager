@@ -16,12 +16,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 @AllArgsConstructor
 @Slf4j
 public class ConcurrentJob extends RecursiveAction {
+    private AtomicInteger totalCitizenElab;
+    private AtomicBoolean CHECK_CONTINUE_UPDATE_RANKING_MILESTONE;
     private final Integer MAX_CITIZEN_UPDATE_RANKING_MILESTONE;
     private final int LIMIT_UPDATE_RANKING_MILESTONE;
     private final CitizenDAO citizenDAO;
     private final OffsetDateTime timestamp;
-    private AtomicInteger totalCitizenElab;
-    private AtomicBoolean CHECK_CONTINUE_UPDATE_RANKING_MILESTONE;
 
     @Override
     protected void compute() {
