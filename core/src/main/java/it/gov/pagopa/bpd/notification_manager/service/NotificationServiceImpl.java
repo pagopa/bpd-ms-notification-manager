@@ -2,24 +2,19 @@ package it.gov.pagopa.bpd.notification_manager.service;
 
 
 import eu.sia.meda.service.BaseService;
-import feign.FeignException;
 import it.gov.pagopa.bpd.notification_manager.connector.award_period.AwardPeriodRestClient;
 import it.gov.pagopa.bpd.notification_manager.connector.award_period.model.AwardPeriod;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.NotificationRestConnector;
-import it.gov.pagopa.bpd.notification_manager.connector.io_backend.exception.NotifyTooManyRequestException;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.NotificationDTO;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.NotificationResource;
-import it.gov.pagopa.bpd.notification_manager.connector.jpa.AwardWinnerErrorDAO;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.CitizenDAO;
-import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.AwardWinnerError;
-import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.WinningCitizen;
 import it.gov.pagopa.bpd.notification_manager.mapper.NotificationDtoMapper;
+import it.gov.pagopa.bpd.notification_manager.recursion.ConcurrentJob;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -31,8 +26,10 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @see NotificationService
@@ -55,6 +52,9 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     private final boolean deleteTmpFilesEnable;
     private final NotificationIOService notificationIOService;
     private final int notifyLoopNumber;
+    private final int LIMIT_UPDATE_RANKING_MILESTONE;
+    private final Integer MAX_CITIZEN_UPDATE_RANKING_MILESTONE;
+    private final int THREAD_POOL;
 
     @Autowired
     NotificationServiceImpl(
@@ -69,8 +69,10 @@ class NotificationServiceImpl extends BaseService implements NotificationService
             @Value("${core.NotificationService.findWinners.maxRow}") Long maxRow,
             @Value("${core.NotificationService.findWinners.deleteTmpFiles.enable}") boolean deleteTmpFilesEnable,
             @Value("${core.NotificationService.notifyWinners.loopNumber}") int notifyLoopNumber,
-            NotificationIOService notificationIOService
-            ) {
+            NotificationIOService notificationIOService,
+            @Value("${core.NotificationService.updateRanking.limitUpdateRankingMilestone}") int LIMIT_UPDATE_RANKING_MILESTONE,
+            @Value("${core.NotificationService.updateRanking.maxCitizenUpdateRankingMilestone}") Integer MAX_CITIZEN_UPDATE_RANKING_MILESTONE,
+            @Value("${core.NotificationService.updateRanking.threadPoolRankingMilestone}") int THREAD_POOL) {
         this.citizenDAO = citizenDAO;
         this.notificationDtoMapper = notificationDtoMapper;
         this.notificationRestConnector = notificationRestConnector;
@@ -83,6 +85,9 @@ class NotificationServiceImpl extends BaseService implements NotificationService
         this.deleteTmpFilesEnable = deleteTmpFilesEnable;
         this.notificationIOService=notificationIOService;
         this.notifyLoopNumber=notifyLoopNumber;
+        this.LIMIT_UPDATE_RANKING_MILESTONE = LIMIT_UPDATE_RANKING_MILESTONE;
+        this.MAX_CITIZEN_UPDATE_RANKING_MILESTONE = MAX_CITIZEN_UPDATE_RANKING_MILESTONE;
+        this.THREAD_POOL = THREAD_POOL;
     }
 
 
@@ -125,6 +130,38 @@ class NotificationServiceImpl extends BaseService implements NotificationService
             logger.info("Executed procedure: updateRanking");
         }
 
+        log.trace("From updateRanking call updateRankingMilestone");
+        updateRankingMilestone();
+
+    }
+
+    public void updateRankingMilestone(){
+        if (logger.isInfoEnabled()) {
+            logger.info("Executing procedure: updateRankingMilestone");
+        }
+
+        ForkJoinPool pool = null;
+        AtomicBoolean CHECK_CONTINUE_UPDATE_RANKING_MILESTONE = new AtomicBoolean(true);
+        AtomicInteger totalCitizenElab = new AtomicInteger(0);
+
+        try {
+            OffsetDateTime timestamp = OffsetDateTime.now();
+
+            pool = (ForkJoinPool) Executors.newWorkStealingPool(THREAD_POOL);
+            for (int threadCount = 0; threadCount < THREAD_POOL; threadCount++) {
+                ConcurrentJob concurrentJob = new ConcurrentJob(totalCitizenElab, CHECK_CONTINUE_UPDATE_RANKING_MILESTONE, MAX_CITIZEN_UPDATE_RANKING_MILESTONE, LIMIT_UPDATE_RANKING_MILESTONE, citizenDAO, timestamp);
+                pool.execute(concurrentJob);
+            }
+
+        }finally {
+            if (pool != null) {
+                pool.shutdown();
+            }
+        }
+
+        if (logger.isInfoEnabled()) {
+            logger.info("Executed procedure: updateRankingMilestone");
+        }
     }
 
     @Override
