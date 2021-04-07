@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Repository
@@ -74,8 +75,13 @@ public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long> {
     )
     List<WinningCitizen> findWinnersToNotify(@Param("awardPeriodId") Long awardPeriodId,
                                              @Param("notifyTimesLimit") Long notifyTimesLimit,
-                                     @Param("resultList") List<String> resultList,
-                                     @Param("offset") Long offset,
-                                     @Param("limit") Long limit);
+                                             @Param("resultList") List<String> resultList,
+                                             @Param("offset") Long offset,
+                                             @Param("limit") Long limit);
+
+    @Query(nativeQuery = true, value = "SELECT * from update_ranking_with_milestone(:offset, :limit, :timestamp)")
+    Integer updateRankingMilestone(@Param("offset") Integer offset,
+                                   @Param("limit") Integer limit,
+                                   @Param("timestamp") OffsetDateTime timestamp);
 
 }

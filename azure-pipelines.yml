@@ -139,15 +139,15 @@ stages:
           - task: Maven@3
             inputs:
               mavenPomFile: 'pom.xml'
-              goals: 'deploy'
-              options: '-B -s $(settingsxml.secureFilePath) -DskipTests=true'
+              goals: 'package'
+              options: '-B -s $(settingsxml.secureFilePath) -DskipTests=false'
               javaHomeOption: 'JDKVersion'
               jdkVersionOption: '1.8'
               mavenVersionOption: 'Default'
               mavenOptions: '-Xmx3072m'
               mavenAuthenticateFeed: false
               effectivePomSkip: true
-              sonarQubeRunAnalysis: false         
+              sonarQubeRunAnalysis: false
           - task: Docker@2
             displayName: Build and push an image to container registry
             condition: succeeded()
@@ -222,7 +222,7 @@ stages:
             inputs:
               mavenPomFile: 'pom.xml'
               goals: 'package'
-              options: '-B -s $(settingsxml.secureFilePath) -DskipTests=true'
+              options: '-B -s $(settingsxml.secureFilePath) -DskipTests=false'
               javaHomeOption: 'JDKVersion'
               jdkVersionOption: '1.8'
               mavenVersionOption: 'Default'
