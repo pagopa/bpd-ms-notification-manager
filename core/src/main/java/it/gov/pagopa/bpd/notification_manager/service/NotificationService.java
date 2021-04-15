@@ -24,4 +24,6 @@ public interface NotificationService {
     void testConnection() throws IOException;
 
     void notifyWinnersPayments() throws IOException;
+
+    void updateBonificaRecesso() throws IOException;
 }

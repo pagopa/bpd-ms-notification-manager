@@ -83,4 +83,6 @@ public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long> {
                                    @Param("limit") Integer limit,
                                    @Param("timestamp") OffsetDateTime timestamp);
 
+    @Query(nativeQuery = true, value = "SELECT * from update_bonifica_recesso_citizen(:citizenRange)")
+    Boolean updateBonificaRecessoMonolitica(@Param("citizenRange") String citizenRange);
 }
