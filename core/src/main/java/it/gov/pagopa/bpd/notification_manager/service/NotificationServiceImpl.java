@@ -27,7 +27,8 @@ import java.time.OffsetDateTime;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -86,8 +87,8 @@ class NotificationServiceImpl extends BaseService implements NotificationService
         this.markdown = markdown;
         this.maxRow = maxRow;
         this.deleteTmpFilesEnable = deleteTmpFilesEnable;
-        this.notificationIOService=notificationIOService;
-        this.notifyLoopNumber=notifyLoopNumber;
+        this.notificationIOService = notificationIOService;
+        this.notifyLoopNumber = notifyLoopNumber;
         this.LIMIT_UPDATE_RANKING_MILESTONE = LIMIT_UPDATE_RANKING_MILESTONE;
         this.MAX_CITIZEN_UPDATE_RANKING_MILESTONE = MAX_CITIZEN_UPDATE_RANKING_MILESTONE;
         this.THREAD_POOL = THREAD_POOL;
@@ -139,7 +140,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
 
     }
 
-    public void updateRankingMilestone(){
+    public void updateRankingMilestone() {
         if (logger.isInfoEnabled()) {
             logger.info("Executing procedure: updateRankingMilestone");
         }
@@ -157,7 +158,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                 pool.execute(concurrentJob);
             }
 
-        }finally {
+        } finally {
             if (pool != null) {
                 pool.shutdown();
             }
