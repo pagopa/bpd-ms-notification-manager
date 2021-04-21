@@ -26,9 +26,10 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -145,19 +146,23 @@ class NotificationServiceImpl extends BaseService implements NotificationService
             logger.info("Executing procedure: updateRankingMilestone");
         }
 
-        ForkJoinPool pool = null;
+//        ForkJoinPool pool = null;
+        ExecutorService pool = null;
         AtomicBoolean CHECK_CONTINUE_UPDATE_RANKING_MILESTONE = new AtomicBoolean(true);
         AtomicInteger totalCitizenElab = new AtomicInteger(0);
 
         try {
             OffsetDateTime timestamp = OffsetDateTime.now();
 
-            pool = (ForkJoinPool) Executors.newWorkStealingPool(THREAD_POOL);
+            pool = Executors.newFixedThreadPool(THREAD_POOL);
+            ArrayList<ConcurrentJob> concurrentJobs = new ArrayList<>(THREAD_POOL);
             for (int threadCount = 0; threadCount < THREAD_POOL; threadCount++) {
-                ConcurrentJob concurrentJob = new ConcurrentJob(totalCitizenElab, CHECK_CONTINUE_UPDATE_RANKING_MILESTONE, MAX_CITIZEN_UPDATE_RANKING_MILESTONE, LIMIT_UPDATE_RANKING_MILESTONE, citizenDAO, timestamp);
-                pool.execute(concurrentJob);
+                concurrentJobs.add(new ConcurrentJob(totalCitizenElab, CHECK_CONTINUE_UPDATE_RANKING_MILESTONE, MAX_CITIZEN_UPDATE_RANKING_MILESTONE, LIMIT_UPDATE_RANKING_MILESTONE, citizenDAO, timestamp));
             }
+            pool.invokeAll(concurrentJobs);
 
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         } finally {
             if (pool != null) {
                 pool.shutdown();
