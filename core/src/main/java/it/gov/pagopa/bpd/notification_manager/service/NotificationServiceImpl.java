@@ -8,6 +8,7 @@ import it.gov.pagopa.bpd.notification_manager.connector.io_backend.NotificationR
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.NotificationDTO;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.NotificationResource;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.CitizenDAO;
+import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.WinningCitizen;
 import it.gov.pagopa.bpd.notification_manager.mapper.NotificationDtoMapper;
 import it.gov.pagopa.bpd.notification_manager.recursion.ConcurrentJob;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +28,8 @@ import java.time.OffsetDateTime;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -55,6 +57,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     private final int LIMIT_UPDATE_RANKING_MILESTONE;
     private final Integer MAX_CITIZEN_UPDATE_RANKING_MILESTONE;
     private final int THREAD_POOL;
+    private final boolean updateStatusEnabled;
 
     @Autowired
     NotificationServiceImpl(
@@ -72,7 +75,8 @@ class NotificationServiceImpl extends BaseService implements NotificationService
             NotificationIOService notificationIOService,
             @Value("${core.NotificationService.updateRanking.limitUpdateRankingMilestone}") int LIMIT_UPDATE_RANKING_MILESTONE,
             @Value("${core.NotificationService.updateRanking.maxCitizenUpdateRankingMilestone}") Integer MAX_CITIZEN_UPDATE_RANKING_MILESTONE,
-            @Value("${core.NotificationService.updateRanking.threadPoolRankingMilestone}") int THREAD_POOL) {
+            @Value("${core.NotificationService.updateRanking.threadPoolRankingMilestone}") int THREAD_POOL,
+            @Value("${core.NotificationService.findWinners.updateStatus.enable}") boolean updateStatusEnabled) {
         this.citizenDAO = citizenDAO;
         this.notificationDtoMapper = notificationDtoMapper;
         this.notificationRestConnector = notificationRestConnector;
@@ -83,11 +87,12 @@ class NotificationServiceImpl extends BaseService implements NotificationService
         this.markdown = markdown;
         this.maxRow = maxRow;
         this.deleteTmpFilesEnable = deleteTmpFilesEnable;
-        this.notificationIOService=notificationIOService;
-        this.notifyLoopNumber=notifyLoopNumber;
+        this.notificationIOService = notificationIOService;
+        this.notifyLoopNumber = notifyLoopNumber;
         this.LIMIT_UPDATE_RANKING_MILESTONE = LIMIT_UPDATE_RANKING_MILESTONE;
         this.MAX_CITIZEN_UPDATE_RANKING_MILESTONE = MAX_CITIZEN_UPDATE_RANKING_MILESTONE;
         this.THREAD_POOL = THREAD_POOL;
+        this.updateStatusEnabled = updateStatusEnabled;
     }
 
 
@@ -135,7 +140,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
 
     }
 
-    public void updateRankingMilestone(){
+    public void updateRankingMilestone() {
         if (logger.isInfoEnabled()) {
             logger.info("Executing procedure: updateRankingMilestone");
         }
@@ -153,7 +158,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                 pool.execute(concurrentJob);
             }
 
-        }finally {
+        } finally {
             if (pool != null) {
                 pool.shutdown();
             }
@@ -225,7 +230,47 @@ class NotificationServiceImpl extends BaseService implements NotificationService
         }
 
         do {
-            fetchedRecord = winnersService.sendWinners(awardPeriodId, fileChunkCount, tempDir, timestamp, recordTotCount);
+            ////////////////////////////
+            if (logger.isDebugEnabled()) {
+                logger.debug("WinnersServiceImpl.sendWinners start");
+            }
+            if (tempDir == null) {
+                throw new IllegalArgumentException("tempDir cannot be null");
+            }
+
+            int result = -1;
+
+            List<WinningCitizen> winners;
+            if (updateStatusEnabled) {
+                if (logger.isInfoEnabled()) {
+                    logger.info(String.format("Starting findWinners query with limit = %d", maxRow));
+                }
+                winners = citizenDAO.findWinners(awardPeriodId, maxRow);
+            } else {
+                long offset = maxRow * fileChunkCount;
+                if (logger.isInfoEnabled()) {
+                    logger.info(String.format("Starting findWinners query with offset %d and limit = %d", offset, maxRow));
+                }
+                winners = citizenDAO.findWinners(awardPeriodId, offset, maxRow);
+            }
+            fetchedRecord = winners.size();
+            if (logger.isInfoEnabled()) {
+                logger.info("Search for winners finished");
+            }
+
+            if (updateStatusEnabled && !winners.isEmpty()) {
+                winners.forEach(w -> w.setStatus(WinningCitizen.Status.WORKING));
+                citizenDAO.saveAll(winners);
+            }
+
+////////////////////////////
+            winnersService.sendWinners(winners, awardPeriodId, fileChunkCount, tempDir, timestamp, recordTotCount);
+
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("WinnersServiceImpl.sendWinners end with %d processed records", fetchedRecord));
+            }
+
+
             fileChunkCount++;
 
         } while (fetchedRecord == maxRow);
@@ -266,14 +311,14 @@ class NotificationServiceImpl extends BaseService implements NotificationService
         int itemCount = 0;
         int loopNumber = 0;
 
-        do{
-            if(notifyLoopNumber==-1 || loopNumber<notifyLoopNumber){
-                itemCount=notificationIOService.notifyWinnersPayments();
+        do {
+            if (notifyLoopNumber == -1 || loopNumber < notifyLoopNumber) {
+                itemCount = notificationIOService.notifyWinnersPayments();
                 loopNumber++;
-            }else{
+            } else {
                 itemCount = 0;
             }
-        } while(itemCount>0);
+        } while (itemCount > 0);
     }
 
 

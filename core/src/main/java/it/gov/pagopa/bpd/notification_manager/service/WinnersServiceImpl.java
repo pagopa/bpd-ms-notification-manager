@@ -20,9 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchProviderException;
 import java.text.DecimalFormat;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,8 +54,7 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
 
     @Autowired
     WinnersServiceImpl(
-            CitizenDAO citizenDAO,
-            WinnersSftpConnector winnersSftpConnector,
+            CitizenDAO citizenDAO, WinnersSftpConnector winnersSftpConnector,
             @Value("${core.NotificationService.findWinners.delimiter}") String delimiter,
             @Value("${core.NotificationService.findWinners.maxRow}") Long maxRow,
             @Value("${core.NotificationService.findWinners.serviceName}") String serviceName,
@@ -81,32 +78,32 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
 
     @Override
     @Transactional
-    public int sendWinners(Long endingPeriodId, int fileChunkCount, Path tempDir, LocalDateTime timestamp, int recordTotCount) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("WinnersServiceImpl.sendWinners start");
-        }
-        if (tempDir == null) {
-            throw new IllegalArgumentException("tempDir cannot be null");
-        }
-
-        int result = -1;
-
-        List<WinningCitizen> winners;
-        if (updateStatusEnabled) {
-            if (logger.isInfoEnabled()) {
-                logger.info(String.format("Starting findWinners query with limit = %d", maxRow));
-            }
-            winners = citizenDAO.findWinners(endingPeriodId, maxRow);
-        } else {
-            long offset = maxRow * fileChunkCount;
-            if (logger.isInfoEnabled()) {
-                logger.info(String.format("Starting findWinners query with offset %d and limit = %d", offset, maxRow));
-            }
-            winners = citizenDAO.findWinners(endingPeriodId, offset, maxRow);
-        }
-        if (logger.isInfoEnabled()) {
-            logger.info("Search for winners finished");
-        }
+    public void sendWinners(List<WinningCitizen> winners, Long endingPeriodId, int fileChunkCount, Path tempDir, LocalDateTime timestamp, int recordTotCount) {
+//        if (logger.isDebugEnabled()) {
+//            logger.debug("WinnersServiceImpl.sendWinners start");
+//        }
+//        if (tempDir == null) {
+//            throw new IllegalArgumentException("tempDir cannot be null");
+//        }
+//
+//        int result = -1;
+//
+//        List<WinningCitizen> winners;
+//        if (updateStatusEnabled) {
+//            if (logger.isInfoEnabled()) {
+//                logger.info(String.format("Starting findWinners query with limit = %d", maxRow));
+//            }
+//            winners = citizenDAO.findWinners(endingPeriodId, maxRow);
+//        } else {
+//            long offset = maxRow * fileChunkCount;
+//            if (logger.isInfoEnabled()) {
+//                logger.info(String.format("Starting findWinners query with offset %d and limit = %d", offset, maxRow));
+//            }
+//            winners = citizenDAO.findWinners(endingPeriodId, offset, maxRow);
+//        }
+//        if (logger.isInfoEnabled()) {
+//            logger.info("Search for winners finished");
+//        }
 
         if (winners != null && !winners.isEmpty()) {
             if (logger.isInfoEnabled()) {
@@ -161,14 +158,9 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
                 throw new RuntimeException(e);
             }
 
-            result = winners.size();
         }
 
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("WinnersServiceImpl.sendWinners end with %d processed records", result));
-        }
 
-        return result;
     }
 
 
