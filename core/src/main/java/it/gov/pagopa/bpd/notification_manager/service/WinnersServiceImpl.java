@@ -189,7 +189,7 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
 
         if (winner.getTechnicalAccountHolder() != null) {
             paymentReasonBuilder.append(PAYMENT_REASON_DELIMITER)
-                    .append(winner.getIssuerCardId());
+                    .append(winner.getIssuerCardId() != null ? winner.getIssuerCardId() : "");
         }
 
         String ticketId = winner.getTicketId()!=null ? winner.getTicketId().toString() : new String("");
