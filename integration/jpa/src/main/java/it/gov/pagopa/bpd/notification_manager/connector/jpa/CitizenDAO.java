@@ -62,6 +62,7 @@ public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long> {
                     " WHERE baw.enabled_b is true" +
                     " AND (:awardPeriodId = -1 OR baw.award_period_id_n = :awardPeriodId)" +
                     " AND baw.payoff_instr_s IS NOT NULL" +
+                    " AND baw.amount_n >= 0.01" +
                     " AND baw.status_s not in ('NEW')" +
                     " AND baw.to_notify_b is true" +
                     " AND baw.esito_bonifico_s IN (:resultList)" +
@@ -74,13 +75,15 @@ public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long> {
     )
     List<WinningCitizen> findWinnersToNotify(@Param("awardPeriodId") Long awardPeriodId,
                                              @Param("notifyTimesLimit") Long notifyTimesLimit,
-                                     @Param("resultList") List<String> resultList,
-                                     @Param("offset") Long offset,
-                                     @Param("limit") Long limit);
+                                             @Param("resultList") List<String> resultList,
+                                             @Param("offset") Long offset,
+                                             @Param("limit") Long limit);
 
     @Query(nativeQuery = true, value = "SELECT * from update_ranking_with_milestone(:offset, :limit, :timestamp)")
     Integer updateRankingMilestone(@Param("offset") Integer offset,
                                    @Param("limit") Integer limit,
                                    @Param("timestamp") OffsetDateTime timestamp);
 
+    @Query(nativeQuery = true, value = "SELECT * from update_bonifica_recesso_citizen(:citizenRange)")
+    Boolean updateBonificaRecessoMonolitica(@Param("citizenRange") String citizenRange);
 }

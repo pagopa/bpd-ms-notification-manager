@@ -59,6 +59,8 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     private final int THREAD_POOL;
     private final boolean updateStatusEnabled;
 
+    private final int BONIFICA_RECESSO_SEARCH_DAYS;
+
     @Autowired
     NotificationServiceImpl(
             CitizenDAO citizenDAO,
@@ -76,6 +78,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
             @Value("${core.NotificationService.updateRanking.limitUpdateRankingMilestone}") int LIMIT_UPDATE_RANKING_MILESTONE,
             @Value("${core.NotificationService.updateRanking.maxCitizenUpdateRankingMilestone}") Integer MAX_CITIZEN_UPDATE_RANKING_MILESTONE,
             @Value("${core.NotificationService.updateRanking.threadPoolRankingMilestone}") int THREAD_POOL,
+            @Value("${core.NotificationService.update.bonfifica.recesso.citizen.search.days}") int BONIFICA_RECESSO_SEARCH_DAYS,
             @Value("${core.NotificationService.findWinners.updateStatus.enable}") boolean updateStatusEnabled) {
         this.citizenDAO = citizenDAO;
         this.notificationDtoMapper = notificationDtoMapper;
@@ -92,6 +95,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
         this.LIMIT_UPDATE_RANKING_MILESTONE = LIMIT_UPDATE_RANKING_MILESTONE;
         this.MAX_CITIZEN_UPDATE_RANKING_MILESTONE = MAX_CITIZEN_UPDATE_RANKING_MILESTONE;
         this.THREAD_POOL = THREAD_POOL;
+        this.BONIFICA_RECESSO_SEARCH_DAYS=BONIFICA_RECESSO_SEARCH_DAYS;
         this.updateStatusEnabled = updateStatusEnabled;
     }
 
@@ -321,6 +325,20 @@ class NotificationServiceImpl extends BaseService implements NotificationService
         } while (itemCount > 0);
     }
 
+    @Override
+    @Scheduled(cron = "${core.NotificationService.update.bonfifica.recesso.schedule}")
+    public void updateBonificaRecesso() throws IOException {
+        if(log.isInfoEnabled()){
+            log.info("NotificationServiceImpl.updateBonificaRecesso - start");
+        }
+        OffsetDateTime now=OffsetDateTime.now();
+        OffsetDateTime citizenRange = now.minusDays(BONIFICA_RECESSO_SEARCH_DAYS);
 
+        citizenDAO.updateBonificaRecessoMonolitica(citizenRange.format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss")));
+
+        if(log.isInfoEnabled()){
+            log.info("NotificationServiceImpl.updateBonificaRecesso - end");
+        }
+    }
 }
 
