@@ -232,4 +232,10 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
 
         return winnerError;
     }
+
+    public NotificationResource sendNotifyIO(String fiscalCode, String notifySubject, String notifyMarkdown){
+        NotificationDTO dto = notificationDtoMapper.NotificationDtoMapper(
+                fiscalCode, timeToLive, notifySubject, notifyMarkdown);
+        return notificationRestConnector.notify(dto);
+    }
 }
