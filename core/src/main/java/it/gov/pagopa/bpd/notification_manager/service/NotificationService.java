@@ -28,4 +28,6 @@ public interface NotificationService {
     void updateBonificaRecesso() throws IOException;
 
     void notifyEndPeriodOrEndGracePeriod() throws IOException;
+
+    void sendWinnersTwiceWeeks() throws IOException;
 }
