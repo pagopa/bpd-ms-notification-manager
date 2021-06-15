@@ -25,4 +25,6 @@ public interface NotificationService {
     void notifyWinnersPayments() throws IOException;
 
     void updateBonificaRecesso() throws IOException;
+
+    void sendWinnersTwiceWeeks() throws IOException;
 }

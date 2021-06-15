@@ -94,7 +94,7 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
         List<WinningCitizen> winners;
         if (updateStatusEnabled) {
             if (logger.isInfoEnabled()) {
-                logger.info(String.format("Starting findWinners query with limit = %d", maxRow));
+                logger.info(String.format("Starting findWinners query with limit = %d for awardPeriod %d", maxRow, endingPeriodId));
             }
             winners = citizenDAO.findWinners(endingPeriodId, maxRow);
         } else {

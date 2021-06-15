@@ -26,6 +26,7 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
@@ -294,6 +295,38 @@ class NotificationServiceImpl extends BaseService implements NotificationService
 
         if(log.isInfoEnabled()){
             log.info("NotificationServiceImpl.updateBonificaRecesso - end");
+        }
+    }
+
+    @Override
+    @Scheduled(cron = "${core.NotificationService.sendWinnersTwiceWeeks.scheduler}")
+    public void sendWinnersTwiceWeeks() throws IOException {
+
+        if (logger.isInfoEnabled()) {
+            logger.info("NotificationManagerServiceImpl.sendWinnersTwiceWeeks start");
+        }
+
+        List<AwardPeriod> awardPeriods = awardPeriodRestClient.findAllAwardPeriods();
+
+        List<Long> endingPeriodId = new ArrayList<>();
+        for (AwardPeriod awardPeriod : awardPeriods) {
+            if (LocalDate.now().isAfter(awardPeriod.getEndDate()
+                    .plus(Period.ofDays(awardPeriod.getGracePeriod().intValue() + 1)))) {
+                endingPeriodId.add(awardPeriod.getAwardPeriodId());
+            }
+        }
+        if (!endingPeriodId.isEmpty()) {
+            if (logger.isInfoEnabled()) {
+                logger.info("NotificationManagerServiceImpl.sendWinnersTwiceWeeks: ending award period found");
+            }
+            for(Long aw : endingPeriodId){
+                sendWinners(aw);
+            }
+
+        }
+
+        if (logger.isInfoEnabled()) {
+            logger.info("NotificationManagerServiceImpl.sendWinnersTwiceWeeks end");
         }
     }
 }
