@@ -7,6 +7,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Controller to expose MicroService
@@ -55,6 +56,9 @@ public interface BpdNotificationManagerController {
 
     @PostMapping(value = "/notifyEndPeriodOrGracePeriod", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    void notifyEndPeriodOrGracePeriod() throws IOException;
+    void notifyEndPeriodOrGracePeriod(
+            @ApiParam(required = false)
+            @RequestParam("fiscalCodes") List<String> fiscalCodes
+    ) throws IOException;
 
 }

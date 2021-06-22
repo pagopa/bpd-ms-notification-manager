@@ -87,6 +87,10 @@ public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long> {
     @Query(nativeQuery = true, value = "SELECT * from update_bonifica_recesso_citizen(:citizenRange)")
     Boolean updateBonificaRecessoMonolitica(@Param("citizenRange") String citizenRange);
 
-    @Query(nativeQuery = true, value = "SELECT fiscal_code_s FROM bpd_citizen WHERE enabled_b IS TRUE OFFSET :offset LIMIT :limit")
-    List<String> extractFiscalCodesToNotifyEndPeriodGracePeriod(@Param("offset") Long offset, @Param("limit") Long limit);
+    @Query(nativeQuery = true, value = "UPDATE bpd_citizen " +
+            "SET notification_step_s= :notStep " +
+            "WHERE fiscal_code_s = :fiscalCode")
+    Boolean updateCitizenWithNotificationStep(@Param("fiscalCode") String fiscalCode,
+                                              @Param("notStep") String notStep);
+
 }

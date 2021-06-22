@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
+import java.util.List;
 
 @RestController
 @Slf4j
@@ -65,7 +66,7 @@ class BpdNotificationManagerControllerImpl extends StatelessController implement
     }
 
     @Override
-    public void notifyEndPeriodOrGracePeriod() throws IOException {
-        notificationService.notifyEndPeriodOrEndGracePeriod();
+    public void notifyEndPeriodOrGracePeriod(List<String> fiscalCodes) throws IOException {
+        notificationService.notifyEndPeriodOrEndGracePeriod(fiscalCodes);
     }
 }

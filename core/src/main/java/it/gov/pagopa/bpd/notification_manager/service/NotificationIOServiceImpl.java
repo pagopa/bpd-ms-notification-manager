@@ -2,13 +2,16 @@ package it.gov.pagopa.bpd.notification_manager.service;
 
 import eu.sia.meda.service.BaseService;
 import feign.FeignException;
+import it.gov.pagopa.bpd.notification_manager.connector.award_period.model.AwardPeriod;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.NotificationRestConnector;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.exception.NotifyTooManyRequestException;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.NotificationDTO;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.NotificationResource;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.AwardWinnerErrorDAO;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.CitizenDAO;
+import it.gov.pagopa.bpd.notification_manager.connector.jpa.CitizenRankingDAO;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.AwardWinnerError;
+import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.CitizenRanking;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.WinningCitizen;
 import it.gov.pagopa.bpd.notification_manager.mapper.NotificationDtoMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -49,6 +52,18 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
     private static final String ORDINE_OK = "ORDINE ESEGUITO";
     private final List<String> notifyResultList;
 
+    private final CitizenRankingDAO citizenRankingDAO;
+
+    private final Long notifyEndPeriodLimit;
+    private final Long notifyEndPeriodOffset;
+    private final String subjectEndPeriod;
+    private final String markdownEndPeriod;
+    private final String subjectEndGracePeriodOK;
+    private final String markdownEndGracePeriodOK;
+    private final String markdownEndGracePeriodOKSuperCash;
+    private final String subjectEndGracePeriodKO;
+    private final String markdownEndGracePeriodKO;
+
     @Autowired
     NotificationIOServiceImpl(
             CitizenDAO citizenDAO,
@@ -65,7 +80,17 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
             @Value("${core.NotificationService.notifyWinners.subject.ko}") String notifySubjectKO,
             @Value("${core.NotificationService.notifyWinners.updateRowsNumber}") Integer notifyUpdateRows,
             AwardWinnerErrorDAO awardWinnerErrorDAO,
-            @Value("${core.NotificationService.notifyWinners.resultList}") List<String> notifyResultList
+            @Value("${core.NotificationService.notifyWinners.resultList}") List<String> notifyResultList,
+            CitizenRankingDAO citizenRankingDAO,
+            @Value("${core.NotificationService.notify.end.period.offset}") Long notifyEndPeriodOffset,
+            @Value("${core.NotificationService.notify.end.period.limit}") Long notifyEndPeriodLimit,
+            @Value("${core.NotificationService.notify.end.period.subject}") String subjectEndPeriod,
+            @Value("${core.NotificationService.notify.end.period.markdown}") String markdownEndPeriod,
+            @Value("${core.NotificationService.notify.end.grace.period.subject.ok}") String subjectEndGracePeriodOK,
+            @Value("${core.NotificationService.notify.end.grace.period.markdown.ok.supercashback}") String markdownEndGracePeriodOKSuperCash,
+            @Value("${core.NotificationService.notify.end.grace.period.markdown.ok}") String markdownEndGracePeriodOK,
+            @Value("${core.NotificationService.notify.end.grace.period.subject.ko}") String subjectEndGracePeriodKO,
+            @Value("${core.NotificationService.notify.end.grace.period.markdown.ko}") String markdownEndGracePeriodKO
     ) {
         this.citizenDAO = citizenDAO;
         this.notificationDtoMapper = notificationDtoMapper;
@@ -82,6 +107,16 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
         this.notifyUpdateRows = notifyUpdateRows;
         this.awardWinnerErrorDAO = awardWinnerErrorDAO;
         this.notifyResultList = notifyResultList;
+        this.citizenRankingDAO = citizenRankingDAO;
+        this.subjectEndPeriod = subjectEndPeriod;
+        this.markdownEndPeriod = markdownEndPeriod;
+        this.subjectEndGracePeriodOK = subjectEndGracePeriodOK;
+        this.markdownEndGracePeriodOK = markdownEndGracePeriodOK;
+        this.markdownEndGracePeriodOKSuperCash = markdownEndGracePeriodOKSuperCash;
+        this.subjectEndGracePeriodKO = subjectEndGracePeriodKO;
+        this.markdownEndGracePeriodKO = markdownEndGracePeriodKO;
+        this.notifyEndPeriodOffset = notifyEndPeriodOffset;
+        this.notifyEndPeriodLimit = notifyEndPeriodLimit;
     }
 
     @Override
@@ -102,9 +137,7 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
                 String notifyMarkdown = getNotifyMarkdown(toNotifyWin);
                 String notifySubject = getNotifySubject(toNotifyWin);
 
-                NotificationDTO dto = notificationDtoMapper.NotificationDtoMapper(
-                        toNotifyWin.getFiscalCode(), timeToLive, notifySubject, notifyMarkdown);
-                NotificationResource resource = notificationRestConnector.notify(dto);
+                NotificationResource resource = this.sendNotifyIO(toNotifyWin.getFiscalCode(),notifySubject,notifyMarkdown);
                 toNotifyWin.setNotifyTimes(Long.sum(toNotifyWin.getNotifyTimes() != null ?
                         toNotifyWin.getNotifyTimes() : 0L, 1L));
                 toNotifyWin.setNotifyId(resource.getId());
@@ -233,9 +266,65 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
         return winnerError;
     }
 
-    public NotificationResource sendNotifyIO(String fiscalCode, String notifySubject, String notifyMarkdown){
+    private NotificationResource sendNotifyIO(String fiscalCode, String notifySubject, String notifyMarkdown){
         NotificationDTO dto = notificationDtoMapper.NotificationDtoMapper(
                 fiscalCode, timeToLive, notifySubject, notifyMarkdown);
         return notificationRestConnector.notify(dto);
+    }
+
+    @Override
+    public void notifyEndPeriodOrEndGracePeriod(AwardPeriod awardPeriod, Boolean isEndPeriod, List<String> fiscalCodes) throws IOException {
+
+        Long limit = notifyEndPeriodLimit;
+
+        String notifySubject = subjectEndPeriod;
+        String notifyMarkdown = markdownEndPeriod;
+
+        String step = null;
+        if(isEndPeriod){
+            step="END_PERIOD_"+awardPeriod.getAwardPeriodId().toString();
+        }else{
+            step="END_GRACE_PERIOD_"+awardPeriod.getAwardPeriodId().toString();
+        }
+
+        List<CitizenRanking> citizenToNotify = null;
+
+        do {
+            citizenToNotify = citizenRankingDAO
+                    .extractRankingByAwardPeriodOrderByTransactionFiscalCode(
+                            awardPeriod.getAwardPeriodId(), step, notifyEndPeriodLimit);
+
+            for(CitizenRanking citRanking : citizenToNotify){
+                Boolean updateCit = Boolean.TRUE;
+                if(!isEndPeriod){
+                    if(citRanking.getRanking()!=null
+                            && awardPeriod.getMinTransactionNumber().compareTo(citRanking.getTransactionNumber())>-1){
+                        notifySubject = subjectEndGracePeriodOK;
+
+                        if(awardPeriod.getMinPosition().compareTo(citRanking.getRanking())>-1){
+                            notifyMarkdown = markdownEndGracePeriodOKSuperCash;
+                        }else{
+                            notifyMarkdown = markdownEndGracePeriodOK;
+                        }
+                    }else{
+                        notifySubject = subjectEndGracePeriodKO;
+                        notifyMarkdown = markdownEndGracePeriodKO;
+                    }
+                }
+                try{
+                    sendNotifyIO(citRanking.getFiscalCode(), notifySubject, notifyMarkdown);
+                }catch(Exception ex){
+                    if(log.isErrorEnabled()){
+                        log.error("Unable to send notify to citizen");
+                    }
+                    updateCit = Boolean.FALSE;
+                }
+
+                if(updateCit){
+                    citizenDAO.updateCitizenWithNotificationStep(citRanking.getFiscalCode(), step);
+                }
+            }
+
+        } while(citizenToNotify!=null && !citizenToNotify.isEmpty());
     }
 }

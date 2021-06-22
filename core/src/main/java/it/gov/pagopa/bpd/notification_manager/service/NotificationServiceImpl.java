@@ -5,7 +5,6 @@ import eu.sia.meda.service.BaseService;
 import it.gov.pagopa.bpd.notification_manager.connector.award_period.AwardPeriodRestClient;
 import it.gov.pagopa.bpd.notification_manager.connector.award_period.model.AwardPeriod;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.NotificationRestConnector;
-import it.gov.pagopa.bpd.notification_manager.connector.io_backend.exception.NotifyTooManyRequestException;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.NotificationDTO;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.NotificationResource;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.CitizenDAO;
@@ -27,7 +26,6 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
@@ -300,48 +298,29 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     }
 
     @Override
-    public void notifyEndPeriodOrEndGracePeriod() throws IOException {
+    public void notifyEndPeriodOrEndGracePeriod(List<String> fiscalCodes) throws IOException {
         if (logger.isInfoEnabled()) {
             logger.info("NotificationManagerServiceImpl.notifyEndPeriodOrEndGracePeriod start");
         }
 
         List<AwardPeriod> awardPeriods = awardPeriodRestClient.findAllAwardPeriods();
 
-        String notifySubject="Fine award period";
-        String notifyMarkdown="Fine award period";
+        AwardPeriod awardPeriod = null;
+        Boolean isEndPeriod = Boolean.FALSE;
+        LocalDate now = LocalDate.now();
 
-        if(awardPeriods.stream().anyMatch(period -> LocalDate.now().equals(period.getEndDate()))){
-            AwardPeriod endedPeriod = awardPeriods.stream().filter(period -> LocalDate.now().equals(period.getEndDate())).findAny().get();
-            notifySubject="Fine award period";
-            notifyMarkdown="il periodo risulta essere terminato";
+        if(awardPeriods.stream().anyMatch(period -> now.equals(period.getEndDate()))
+            || awardPeriods.stream().anyMatch(period -> now.equals(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue()))))){
 
-        } else if(awardPeriods.stream().anyMatch(period -> LocalDate.now().equals(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue()))))){
-            AwardPeriod endedGracePeriod = awardPeriods.stream().filter(period -> LocalDate.now().equals(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())))).findAny().get();
-            notifySubject="Fine grace period";
-            notifyMarkdown="il grace period risulta essere terminato";
-        }
+            if(awardPeriods.stream().anyMatch(period -> now.equals(period.getEndDate()))){
+                isEndPeriod = Boolean.TRUE;
+                awardPeriod = awardPeriods.stream().filter(period -> now.equals(period.getEndDate())).findAny().get();
+            }else{
+                awardPeriod = awardPeriods.stream().filter(period -> now.equals(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())))).findAny().get();
+            }
 
-        if(notifySubject!=null && notifyMarkdown!=null){
-            Long offset = 0L;
-            Long limit = 1L;
-            Long run = 0L;
-            List<String> citizenToNotify = new ArrayList<String>();//citizenDAO.extractFiscalCodesToNotifyEndPeriodGracePeriod(0L, 1L);
-            citizenToNotify.add("MSSDNL91E09F158H");
-
-            while(citizenToNotify!=null && !citizenToNotify.isEmpty()){
-
-                for(String fiscalCode : citizenToNotify){
-                    try{
-                        notificationIOService.sendNotifyIO(fiscalCode, notifySubject, notifyMarkdown);
-                    }catch(Exception ex){
-                        if(log.isErrorEnabled()){
-                            log.error("Unable to send notify to citizen");
-                        }
-                    }
-                }
-
-                offset= limit * ++run;
-                //citizenToNotify = citizenDAO.extractFiscalCodesToNotifyEndPeriodGracePeriod(0L, 1L);
+            if(awardPeriod!=null){
+                notificationIOService.notifyEndPeriodOrEndGracePeriod(awardPeriod, isEndPeriod, fiscalCodes);
             }
         }
 
