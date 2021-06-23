@@ -24,7 +24,9 @@ import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static java.math.BigDecimal.ROUND_HALF_DOWN;
 
@@ -63,6 +65,20 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
     private final String markdownEndGracePeriodOKSuperCash;
     private final String subjectEndGracePeriodKO;
     private final String markdownEndGracePeriodKO;
+
+    private static final Map<Long,String> phases=new HashMap();
+    static{
+        phases.put(1L,"prima");
+        phases.put(2L,"seconda");
+        phases.put(3L,"terza");
+        phases.put(4L,"quarta");
+        phases.put(5L,"quinta");
+        phases.put(6L,"sesta");
+        phases.put(7L,"settima");
+        phases.put(8L,"ottava");
+        phases.put(9L,"nona");
+        phases.put(10L,"decima");
+    }
 
     @Autowired
     NotificationIOServiceImpl(
@@ -281,21 +297,29 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
         String notifyMarkdown = markdownEndPeriod;
 
         String step = null;
-        if(isEndPeriod){
-            step="END_PERIOD_"+awardPeriod.getAwardPeriodId().toString();
-        }else{
-            step="END_GRACE_PERIOD_"+awardPeriod.getAwardPeriodId().toString();
-        }
 
         List<CitizenRanking> citizenToNotify = null;
 
         do {
-            citizenToNotify = citizenRankingDAO
-                    .extractRankingByAwardPeriodOrderByTransactionFiscalCode(
-                            awardPeriod.getAwardPeriodId(), step, notifyEndPeriodLimit);
+            if(isEndPeriod){
+                step="END_PERIOD_"+awardPeriod.getAwardPeriodId().toString();
+            }else{
+                step="END_GRACE_PERIOD_"+awardPeriod.getAwardPeriodId().toString();
+            }
+
+            if(fiscalCodes!=null && !fiscalCodes.isEmpty()){
+                citizenToNotify = citizenRankingDAO
+                        .extractRankingByAwardPeriodOrderByTransactionFiscalCodeByList(
+                                awardPeriod.getAwardPeriodId(), step, notifyEndPeriodLimit, fiscalCodes);
+            }else {
+                citizenToNotify = citizenRankingDAO
+                        .extractRankingByAwardPeriodOrderByTransactionFiscalCode(
+                                awardPeriod.getAwardPeriodId(), step, notifyEndPeriodLimit);
+            }
 
             for(CitizenRanking citRanking : citizenToNotify){
                 Boolean updateCit = Boolean.TRUE;
+
                 if(!isEndPeriod){
                     if(citRanking.getRanking()!=null
                             && awardPeriod.getMinTransactionNumber().compareTo(citRanking.getTransactionNumber())>-1){
@@ -311,18 +335,25 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
                         notifyMarkdown = markdownEndGracePeriodKO;
                     }
                 }
+
                 try{
+                    notifyMarkdown=notifyMarkdown
+                            .replace("{{phase}}",phases.get(awardPeriod.getAwardPeriodId()))
+                            .replace("{{maxTransaction}}",awardPeriod.getMaxTransactionCashback().toString())
+                            .replace("{{amount}}",citRanking.getTotalCashback() != null ? citRanking.getTotalCashback().setScale(2, ROUND_HALF_DOWN).toString().replace(".", ","):MARKDOWN_NA);
+
                     sendNotifyIO(citRanking.getFiscalCode(), notifySubject, notifyMarkdown);
                 }catch(Exception ex){
                     if(log.isErrorEnabled()){
                         log.error("Unable to send notify to citizen");
                     }
-                    updateCit = Boolean.FALSE;
+                    //updateCit = Boolean.FALSE;
+                    step = step+"_ERROR";
                 }
 
-                if(updateCit){
+                //if(updateCit){
                     citizenDAO.updateCitizenWithNotificationStep(citRanking.getFiscalCode(), step);
-                }
+                //}
             }
 
         } while(citizenToNotify!=null && !citizenToNotify.isEmpty());
