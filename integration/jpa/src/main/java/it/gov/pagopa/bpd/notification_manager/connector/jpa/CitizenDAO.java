@@ -70,7 +70,8 @@ public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long> {
                     " AND baw.to_notify_b is true" +
                     " AND baw.esito_bonifico_s IN (:resultList)" +
                     " AND (:notifyTimesLimit = -1 OR baw.notify_times_n < :notifyTimesLimit)" +
-                    " AND EXISTS( SELECT * FROM bpd_citizen bc WHERE bc.fiscal_code_s = baw.fiscal_code_s AND bc.enabled_b IS true )" +
+                    " AND EXISTS( SELECT * FROM bpd_citizen bc WHERE bc.fiscal_code_s = baw.fiscal_code_s" +
+                    " AND bc.enabled_b IS true )" +
                     " ORDER BY id_n" +
                     " OFFSET :offset" +
                     " LIMIT :limit" +
