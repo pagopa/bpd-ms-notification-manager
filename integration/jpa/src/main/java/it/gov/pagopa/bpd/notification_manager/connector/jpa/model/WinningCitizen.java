@@ -94,6 +94,9 @@ public class WinningCitizen extends BaseEntity {
     @Column(name = "related_id_n")
     private Long relatedUniqueId;
 
+    @Column(name = "issuer_card_id_s")
+    private String issuerCardId;
+
     public enum Status {
         NEW, SENT, RECOVERY
     }
