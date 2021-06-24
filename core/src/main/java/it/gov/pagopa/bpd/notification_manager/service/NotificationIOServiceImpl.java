@@ -79,6 +79,19 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
         phases.put(9L,"nona");
         phases.put(10L,"decima");
     }
+    private static final Map<Long,String> awPeriods=new HashMap();
+    static{
+        awPeriods.put(1L,"primo");
+        awPeriods.put(2L,"secondo");
+        awPeriods.put(3L,"terzo");
+        awPeriods.put(4L,"quarto");
+        awPeriods.put(5L,"quinto");
+        awPeriods.put(6L,"sesto");
+        awPeriods.put(7L,"settimo");
+        awPeriods.put(8L,"ottavo");
+        awPeriods.put(9L,"nono");
+        awPeriods.put(10L,"decimo");
+    }
 
     @Autowired
     NotificationIOServiceImpl(
@@ -340,7 +353,7 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
                 }
 
                 try{
-                    notifySubject=notifySubject.replace("{{award_period}}",awardPeriod.getAwardPeriodId().toString());
+                    notifySubject=notifySubject.replace("{{award_period}}",awPeriods.get(awardPeriod.getAwardPeriodId()));
                     notifyMarkdown=notifyMarkdown
                             .replace("{{phase}}",phases.get(awardPeriod.getAwardPeriodId()))
                             .replace("{{maxTransaction}}",awardPeriod.getMaxTransactionCashback().toString())
