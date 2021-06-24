@@ -307,16 +307,16 @@ class NotificationServiceImpl extends BaseService implements NotificationService
 
         AwardPeriod awardPeriod = null;
         Boolean isEndPeriod = Boolean.FALSE;
-        LocalDate now = LocalDate.now();
+        LocalDate yesterday = LocalDate.now().minus(Period.ofDays(1));
 
-        if(awardPeriods.stream().anyMatch(period -> now.equals(period.getEndDate()))
-            || awardPeriods.stream().anyMatch(period -> now.equals(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue()))))){
+        if(awardPeriods.stream().anyMatch(period -> yesterday.equals(period.getEndDate()))
+            || awardPeriods.stream().anyMatch(period -> yesterday.equals(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue()))))){
 
-            if(awardPeriods.stream().anyMatch(period -> now.equals(period.getEndDate()))){
+            if(awardPeriods.stream().anyMatch(period -> yesterday.equals(period.getEndDate()))){
                 isEndPeriod = Boolean.TRUE;
-                awardPeriod = awardPeriods.stream().filter(period -> now.equals(period.getEndDate())).findAny().get();
+                awardPeriod = awardPeriods.stream().filter(period -> yesterday.equals(period.getEndDate())).findAny().get();
             }else{
-                awardPeriod = awardPeriods.stream().filter(period -> now.equals(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())))).findAny().get();
+                awardPeriod = awardPeriods.stream().filter(period -> yesterday.equals(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())))).findAny().get();
             }
 
             if(awardPeriod!=null){
