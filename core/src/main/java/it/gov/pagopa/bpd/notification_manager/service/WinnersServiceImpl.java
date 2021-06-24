@@ -181,14 +181,10 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
                 .append("dal ").append(winner.getAwardPeriodStart().format(ONLY_DATE_FORMATTER))
                 .append(" al ").append(winner.getAwardPeriodEnd().format(ONLY_DATE_FORMATTER));
 
-        if (!winner.getFiscalCode().equals(winner.getAccountHolderFiscalCode())) {
+
+        if (winner.getTechnicalAccountHolder()!=null) {
             paymentReasonBuilder.append(PAYMENT_REASON_DELIMITER)
                     .append(winner.getFiscalCode());
-        }
-
-
-        if (winner.getTechnicalAccountHolder()!=null
-                && winner.getIssuerCardId()!=null) {
             paymentReasonBuilder.append(PAYMENT_REASON_DELIMITER)
                     .append(winner.getIssuerCardId());
         }
