@@ -337,10 +337,12 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
                 }
 
                 try{
+                    notifySubject=notifySubject.replace("{{award_period}}",awardPeriod.getAwardPeriodId().toString());
                     notifyMarkdown=notifyMarkdown
                             .replace("{{phase}}",phases.get(awardPeriod.getAwardPeriodId()))
                             .replace("{{maxTransaction}}",awardPeriod.getMaxTransactionCashback().toString())
-                            .replace("{{amount}}",citRanking.getTotalCashback() != null ? citRanking.getTotalCashback().setScale(2, ROUND_HALF_DOWN).toString().replace(".", ","):MARKDOWN_NA);
+                            .replace("{{amount}}",citRanking.getTotalCashback() != null ? citRanking.getTotalCashback().setScale(2, ROUND_HALF_DOWN).toString().replace(".", ","):MARKDOWN_NA)
+                            .replace("\\n", System.lineSeparator());
 
                     sendNotifyIO(citRanking.getFiscalCode(), notifySubject, notifyMarkdown);
                 }catch(Exception ex){
