@@ -13,31 +13,31 @@ import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
 
-@EnableJpaRepositories(
-        excludeFilters = @ComponentScan.Filter(Repository.class)
-)
+//@EnableJpaRepositories(
+//        excludeFilters = @ComponentScan.Filter(Repository.class)
+//)
 @Configuration
 @PropertySource("classpath:config/jdbcConfig.properties")
 class JdbcConfig {
 
-    @Bean("citizenJdbcTemplate")
-//    @Primary
-    public JdbcTemplate citizenJdbcTemplate() {
-        return new JdbcTemplate(citizenJdbcDataSource());
-    }
-
-    @Bean("citizenJdbcDataSource")
-//    @Primary
-    @ConfigurationProperties(prefix = "citizen.spring.datasource.hikari")
-    public DataSource citizenJdbcDataSource() {
-        return citizenJdbcDataSourceProperties().initializeDataSourceBuilder().build();
-    }
-
-    @Bean("citizenJdbcDataSourceProperties")
-//    @Primary
-    @ConfigurationProperties("citizen.spring.datasource")
-    public DataSourceProperties citizenJdbcDataSourceProperties() {
-        return new DataSourceProperties();
-    }
+//    @Bean("citizenJdbcTemplate")
+////    @Primary
+//    public JdbcTemplate citizenJdbcTemplate() {
+//        return new JdbcTemplate(citizenJdbcDataSource());
+//    }
+//
+//    @Bean("citizenJdbcDataSource")
+////    @Primary
+//    @ConfigurationProperties(prefix = "citizen.spring.datasource.hikari")
+//    public DataSource citizenJdbcDataSource() {
+//        return citizenJdbcDataSourceProperties().initializeDataSourceBuilder().build();
+//    }
+//
+//    @Bean("citizenJdbcDataSourceProperties")
+////    @Primary
+//    @ConfigurationProperties("citizen.spring.datasource")
+//    public DataSourceProperties citizenJdbcDataSourceProperties() {
+//        return new DataSourceProperties();
+//    }
 
 }

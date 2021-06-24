@@ -10,4 +10,6 @@ public interface CitizenJdbcDAO {
     int[] updateWinningCitizen(List<WinningJdbcCitizen> winningJdbcCitizens);
 
     List<WinningJdbcCitizen> findWinners(Long endingPeriodId, Long maxRow);
+
+//    int[] updateWinningCitizenStatus(List<WinningJdbcCitizen> winningJdbcCitizens, WinningJdbcCitizen.Status status);
 }

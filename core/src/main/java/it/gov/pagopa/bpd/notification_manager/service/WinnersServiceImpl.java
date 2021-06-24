@@ -3,24 +3,32 @@ package it.gov.pagopa.bpd.notification_manager.service;
 
 import eu.sia.meda.service.BaseService;
 import it.gov.pagopa.bpd.notification_manager.connector.WinnersSftpConnector;
+import it.gov.pagopa.bpd.notification_manager.connector.award_period.AwardPeriodRestClient;
+import it.gov.pagopa.bpd.notification_manager.connector.award_period.model.AwardPeriod;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.CitizenDAO;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.WinningCitizen;
 import it.gov.pagopa.bpd.notification_manager.encryption.EncryptUtil;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.openpgp.PGPException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import javax.transaction.Transactional;
 import java.io.*;
 import java.math.BigDecimal;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.security.NoSuchProviderException;
 import java.text.DecimalFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,11 +46,12 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
     private static final DecimalFormat SIX_DIGITS_FORMAT = new DecimalFormat("000000");
     private static final BigDecimal CENTS_MULTIPLICAND = BigDecimal.valueOf(100);
     private static final DateTimeFormatter ONLY_DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-    private static final DateTimeFormatter CSV_NAME_ONLY_DATE_FORMATTER = DateTimeFormatter.ofPattern("ddMMyyyy");
-    private static final DateTimeFormatter CSV_NAME_ONLY_TIME_FORMATTER = DateTimeFormatter.ofPattern("HHmmss");
+    private static final DateTimeFormatter CSV_NAME_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("ddMMyyyy.HHmmss");
+    private static final String CSV_NAME_SEPARATOR = ".";
 
     private final CitizenDAO citizenDAO;
     private final WinnersSftpConnector winnersSftpConnector;
+    private final AwardPeriodRestClient awardPeriodRestClient;
     private final String CSV_DELIMITER;
     private final Long maxRow;
     private final String serviceName;
@@ -51,10 +60,14 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
     private final String publicKey;
     private final boolean sftpEnable;
     private final boolean updateStatusEnabled;
+    private final boolean deleteTmpFilesEnable;
 
     @Autowired
     WinnersServiceImpl(
-            CitizenDAO citizenDAO, WinnersSftpConnector winnersSftpConnector,
+            CitizenDAO citizenDAO,
+//            CitizenJdbcDAO citizenJdbcDAO,
+            WinnersSftpConnector winnersSftpConnector,
+            AwardPeriodRestClient awardPeriodRestClient,
             @Value("${core.NotificationService.findWinners.delimiter}") String delimiter,
             @Value("${core.NotificationService.findWinners.maxRow}") Long maxRow,
             @Value("${core.NotificationService.findWinners.serviceName}") String serviceName,
@@ -62,9 +75,11 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
             @Value("${core.NotificationService.findWinners.fileType}") String fileType,
             @Value("${core.NotificationService.findWinners.publicKey}") String publicKey,
             @Value("${core.NotificationService.findWinners.sftp.enable}") boolean sftpEnable,
-            @Value("${core.NotificationService.findWinners.updateStatus.enable}") boolean updateStatusEnabled) {
+            @Value("${core.NotificationService.findWinners.updateStatus.enable}") boolean updateStatusEnabled,
+            @Value("${core.NotificationService.findWinners.deleteTmpFiles.enable}") boolean deleteTmpFilesEnable) {
         this.citizenDAO = citizenDAO;
         this.winnersSftpConnector = winnersSftpConnector;
+        this.awardPeriodRestClient = awardPeriodRestClient;
         CSV_DELIMITER = delimiter;
         this.maxRow = maxRow;
         this.serviceName = serviceName;
@@ -73,83 +88,160 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
         this.publicKey = publicKey;
         this.sftpEnable = sftpEnable;
         this.updateStatusEnabled = updateStatusEnabled;
+        this.deleteTmpFilesEnable = deleteTmpFilesEnable;
+    }
+
+
+    @Scheduled(cron = "${core.NotificationService.updateAndSendWinners.scheduler}")
+    public void updateAndSendWinners() throws IOException {
+
+        if (logger.isInfoEnabled()) {
+            logger.info("NotificationManagerServiceImpl.updateAndSendWinners start");
+        }
+
+        List<AwardPeriod> awardPeriods = awardPeriodRestClient.findAllAwardPeriods();
+
+        Long endingPeriodId = null;
+        for (AwardPeriod awardPeriod : awardPeriods) {
+            if (LocalDate.now().equals(awardPeriod.getEndDate()
+                    .plus(Period.ofDays(awardPeriod.getGracePeriod().intValue() + 1)))) {
+                endingPeriodId = awardPeriod.getAwardPeriodId();
+            }
+        }
+        if (endingPeriodId != null) {
+            if (logger.isInfoEnabled()) {
+                logger.info("NotificationManagerServiceImpl.updateAndSendWinners: ending award period found");
+            }
+            updateWinners(endingPeriodId);
+            sendWinners(endingPeriodId, null);
+        }
+
+        if (logger.isInfoEnabled()) {
+            logger.info("NotificationManagerServiceImpl.updateAndSendWinners end");
+        }
     }
 
 
     @Override
-    @Transactional
-    public void sendWinners(List<WinningCitizen> winners, Long endingPeriodId, int fileChunkCount, Path tempDir, LocalDateTime timestamp, int recordTotCount) {
-//        if (logger.isDebugEnabled()) {
-//            logger.debug("WinnersServiceImpl.sendWinners start");
-//        }
-//        if (tempDir == null) {
-//            throw new IllegalArgumentException("tempDir cannot be null");
-//        }
-//
-//        int result = -1;
-//
-//        List<WinningCitizen> winners;
-//        if (updateStatusEnabled) {
-//            if (logger.isInfoEnabled()) {
-//                logger.info(String.format("Starting findWinners query with limit = %d", maxRow));
-//            }
-//            winners = citizenDAO.findWinners(endingPeriodId, maxRow);
-//        } else {
-//            long offset = maxRow * fileChunkCount;
-//            if (logger.isInfoEnabled()) {
-//                logger.info(String.format("Starting findWinners query with offset %d and limit = %d", offset, maxRow));
-//            }
-//            winners = citizenDAO.findWinners(endingPeriodId, offset, maxRow);
-//        }
-//        if (logger.isInfoEnabled()) {
-//            logger.info("Search for winners finished");
-//        }
+    public void updateWinners(Long awardPeriodId) {
+        if (logger.isInfoEnabled()) {
+            logger.info(String.format("Executing procedure updateWinners for awardPeriod %s", awardPeriodId));
+        }
+        citizenDAO.updateWinners(awardPeriodId);
+        if (logger.isInfoEnabled()) {
+            logger.info(String.format("Executed procedure updateWinners for awardPeriod %s", awardPeriodId));
+        }
+    }
 
-        if (winners != null && !winners.isEmpty()) {
-            if (logger.isInfoEnabled()) {
-                logger.info("Winners found");
+
+    @SneakyThrows
+    @Override
+    public void sendWinners(Long awardPeriodId, String lastChunkFilenameSent) {
+        logger.info("NotificationManagerServiceImpl.sendWinners start");
+
+        if (citizenDAO.existsWorkingWinner(awardPeriodId)) {
+            throw new IllegalStateException(String.format("There is at least one 'WIP' (work in progress) record with awardPeriodId = %d, please restore data consistency before running a new execution",
+                    awardPeriodId));
+        }
+
+        int fileChunkCount;
+        int totalChunkCount;
+        Path tempDir = Files.createTempDirectory("csv_directory");
+        logger.info("temporaryDirectoryPath = {}", tempDir.toAbsolutePath());
+        String filenamePrefix;
+
+        if (lastChunkFilenameSent != null) {
+            String[] filenameParts = StringUtils.split(lastChunkFilenameSent, CSV_NAME_SEPARATOR);
+            filenamePrefix = tempDir + File.separator
+                    + filenameParts[0] + CSV_NAME_SEPARATOR
+                    + filenameParts[1] + CSV_NAME_SEPARATOR
+                    + filenameParts[2] + CSV_NAME_SEPARATOR
+                    + filenameParts[3] + CSV_NAME_SEPARATOR
+                    + filenameParts[4];
+            String[] fileCountParts = StringUtils.split(filenameParts[5], '_');
+            fileChunkCount = Integer.parseInt(fileCountParts[0]) + 1;
+            totalChunkCount = Integer.parseInt(fileCountParts[1]);
+
+        } else {
+            fileChunkCount = 1;
+            filenamePrefix = tempDir + File.separator
+                    + serviceName + CSV_NAME_SEPARATOR
+                    + authorityType + CSV_NAME_SEPARATOR
+                    + fileType + CSV_NAME_SEPARATOR
+                    + LocalDateTime.now().format(CSV_NAME_DATE_TIME_FORMATTER);
+
+            int recordTotCount = citizenDAO.countFindWinners(awardPeriodId);
+            totalChunkCount = (int) Math.ceil((double) recordTotCount / maxRow);
+        }
+
+        sendWinners(awardPeriodId, filenamePrefix, totalChunkCount, fileChunkCount);
+
+        if (deleteTmpFilesEnable) {
+            logger.info("Deleting {}", tempDir);
+            deleteDirectoryRecursion(tempDir);
+        }
+
+        logger.info("NotificationManagerServiceImpl.sendWinners end");
+    }
+
+
+    private void sendWinners(Long awardPeriodId, String filenamePrefix, int totalChunkCount, int fileChunkCount) {
+        int fetchedRecord;
+
+        do {
+            logger.info("Starting findWinners chunk {} of {}", fileChunkCount, totalChunkCount);
+            List<WinningCitizen> winners = updateStatusEnabled
+                    ? citizenDAO.findWinners(awardPeriodId, maxRow)
+                    : citizenDAO.findWinners(awardPeriodId, maxRow, (fileChunkCount - 1) * maxRow);
+            fetchedRecord = winners.size();
+            logger.info("Fetched {} winners", fetchedRecord);
+
+            winners.forEach(winner -> winner.setStatus(WinningCitizen.Status.WIP));
+            if (updateStatusEnabled) {
+                citizenDAO.saveAll(winners);//TODO: save jdbc
             }
 
-            String filenamePrefix = tempDir + File.separator
-                    + serviceName + "."
-                    + authorityType + "."
-                    + fileType + "."
-                    + timestamp.format(CSV_NAME_ONLY_DATE_FORMATTER) + "."
-                    + timestamp.format(CSV_NAME_ONLY_TIME_FORMATTER) + ".";
+            sendWinners(winners, filenamePrefix, fileChunkCount, totalChunkCount);
 
-            String totalFileNumber = TWO_DIGITS_FORMAT.format((int) Math.ceil((double) recordTotCount / maxRow));
-            String currentFileNumber = TWO_DIGITS_FORMAT.format(fileChunkCount+1);
+            winners.forEach(winner -> winner.setStatus(WinningCitizen.Status.SENT));
+            if (updateStatusEnabled) {
+                citizenDAO.saveAll(winners);//TODO: save jdbc
+            }
 
-            String fileName = filenamePrefix
-                    + currentFileNumber + "_" + totalFileNumber + "."
-                    + (recordTotCount <= maxRow ? recordTotCount :
-                    ((int) Math.ceil(((double) recordTotCount / maxRow)) > fileChunkCount+1 ? maxRow : recordTotCount % maxRow))
+            logger.info("Completed sendWinners chunk {} of {}.", fileChunkCount, totalChunkCount);
+
+            fileChunkCount++;
+
+        } while (fetchedRecord == maxRow);
+    }
+
+
+    private void sendWinners(List<WinningCitizen> winners, String filenamePrefix, int fileChunkCount, int totalChunkCount) {
+        if (winners != null && !winners.isEmpty()) {
+
+            String totalFileNumber = TWO_DIGITS_FORMAT.format(totalChunkCount);
+            String currentFileNumber = TWO_DIGITS_FORMAT.format(fileChunkCount);
+
+            String fileName = filenamePrefix + CSV_NAME_SEPARATOR
+                    + currentFileNumber + "_" + totalFileNumber + CSV_NAME_SEPARATOR
+                    + winners.size()
                     + ".csv";
 
-            if (logger.isInfoEnabled()) {
-                logger.info(String.format("Creating file %s", fileName));
-            }
-
             try {
+                logger.info("Creating file {}", fileName);
                 File csvOutputFile = new File(fileName);
                 PrintWriter csvPrintWriter = new PrintWriter(csvOutputFile);
 
                 for (WinningCitizen winner : winners) {
                     String csvRow = generateCsvRow(winner);
                     csvPrintWriter.println(csvRow);
-
-                    if (updateStatusEnabled) {
-                        winner.setChunkFilename(fileName);
-                        winner.setStatus(WinningCitizen.Status.SENT);
-                    }
+                    winner.setChunkFilename(fileName);
                 }
 
                 csvPrintWriter.close();
                 File csvChecksumOutputFile = createChecksumFile(csvOutputFile);
                 File csvPgpFile = cryptFile(csvOutputFile);
-                if (updateStatusEnabled) {
-                    citizenDAO.saveAll(winners);
-                }
+
                 if (sftpEnable) {
                     sendFiles(csvPgpFile, csvChecksumOutputFile);
                 }
@@ -157,10 +249,7 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
             } catch (IOException | NoSuchProviderException | PGPException e) {
                 throw new RuntimeException(e);
             }
-
         }
-
-
     }
 
 
@@ -178,8 +267,8 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
                     .append(winner.getFiscalCode());
         }
 
-        String ticketId = winner.getTicketId()!=null ? winner.getTicketId().toString() : new String("");
-        String relatedId= winner.getRelatedUniqueId() != null ? winner.getRelatedUniqueId().toString() : new String("");
+        String ticketId = winner.getTicketId() != null ? winner.getTicketId().toString() : StringUtils.EMPTY;
+        String relatedId = winner.getRelatedUniqueId() != null ? winner.getRelatedUniqueId().toString() : StringUtils.EMPTY;
 
         return NINE_DIGITS_FORMAT.format(winner.getId()) +
                 CSV_DELIMITER +
@@ -209,7 +298,7 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
                 CSV_DELIMITER +
                 winner.getCheckInstrStatus() +
                 CSV_DELIMITER +
-                winner.getTechnicalAccountHolder()+
+                winner.getTechnicalAccountHolder() +
                 CSV_DELIMITER +
                 ticketId +
                 CSV_DELIMITER +
@@ -242,16 +331,9 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
 
     private void sendFiles(File... files) {
         for (File file : files) {
-
-            if (logger.isInfoEnabled()) {
-                logger.info("Sending File: " + file.getName());
-            }
-
+            logger.info("Sending File: " + file.getName());
             winnersSftpConnector.sendFile(file);
-
-            if (logger.isInfoEnabled()) {
-                logger.info("Sent File: " + file.getName());
-            }
+            logger.info("Sent File: " + file.getName());
         }
     }
 
@@ -277,6 +359,29 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
 
         return csvChecksumOutputFile;
     }
+
+
+    private void deleteDirectoryRecursion(Path path) throws IOException {
+        if (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
+            try (DirectoryStream<Path> entries = Files.newDirectoryStream(path)) {
+                for (Path entry : entries) {
+                    deleteDirectoryRecursion(entry);
+                }
+            }
+        }
+        Files.delete(path);
+    }
+
+
+    @Override
+    public void restoreWinners(Long awardPeriodId, WinningCitizen.Status status, String chunkFilename) {
+        if (chunkFilename == null) {
+            citizenDAO.restoreWinners(awardPeriodId, status);
+        } else {
+            citizenDAO.restoreWinners(awardPeriodId, status, chunkFilename);
+        }
+    }
+
 
     @Override
     public void testConnection() throws IOException {

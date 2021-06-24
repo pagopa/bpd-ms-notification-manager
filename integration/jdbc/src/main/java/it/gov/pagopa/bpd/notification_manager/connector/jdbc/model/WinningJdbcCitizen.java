@@ -72,6 +72,6 @@ public class WinningJdbcCitizen {
     @Column(name = "related_id_n")
     private Long relatedUniqueId;
     public enum Status {
-        NEW, SENT, RECOVERY
+        NEW, SENT, RECOVERY, WIP
     }
 }
