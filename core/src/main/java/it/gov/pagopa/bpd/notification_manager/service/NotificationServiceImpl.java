@@ -307,7 +307,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
 
         AwardPeriod awardPeriod = null;
         Boolean isEndPeriod = Boolean.FALSE;
-        LocalDate now = LocalDate.now();
+        LocalDate now = LocalDate.now().plus(Period.ofDays(1));
 
         if(awardPeriods.stream().anyMatch(period -> now.equals(period.getEndDate()))
             || awardPeriods.stream().anyMatch(period -> now.equals(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue()))))){

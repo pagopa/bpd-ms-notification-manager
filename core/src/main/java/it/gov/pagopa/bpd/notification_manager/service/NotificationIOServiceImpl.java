@@ -337,6 +337,7 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
                 }
 
                 try{
+                    notifySubject=notifySubject.replace("{{award_period}}",awardPeriod.getAwardPeriodId().toString());
                     notifyMarkdown=notifyMarkdown
                             .replace("{{phase}}",phases.get(awardPeriod.getAwardPeriodId()))
                             .replace("{{maxTransaction}}",awardPeriod.getMaxTransactionCashback().toString())
