@@ -298,6 +298,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     }
 
     @Override
+    @Scheduled(cron = "${core.NotificationService.notify.end.period.scheduled}")
     public void notifyEndPeriodOrEndGracePeriod(List<String> fiscalCodes) throws IOException {
         if (logger.isInfoEnabled()) {
             logger.info("NotificationManagerServiceImpl.notifyEndPeriodOrEndGracePeriod start");
