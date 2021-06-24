@@ -334,6 +334,9 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
                         notifySubject = subjectEndGracePeriodKO;
                         notifyMarkdown = markdownEndGracePeriodKO;
                     }
+                    step="END_GRACE_PERIOD_"+awardPeriod.getAwardPeriodId().toString();
+                }else{
+                    step="END_PERIOD_"+awardPeriod.getAwardPeriodId().toString();
                 }
 
                 try{
