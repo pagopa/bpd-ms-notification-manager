@@ -94,7 +94,10 @@ public class WinningCitizen extends BaseEntity {
     @Column(name = "related_id_n")
     private Long relatedUniqueId;
 
+    @Column(name = "consap_id_n")
+    Long consapId;
+
     public enum Status {
-        NEW, SENT, RECOVERY
+        NEW, SENT, RECOVERY, INTEGRATION
     }
 }
