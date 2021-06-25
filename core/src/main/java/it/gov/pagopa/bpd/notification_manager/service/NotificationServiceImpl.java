@@ -317,7 +317,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
         }
         if (!endingPeriodId.isEmpty()) {
             if (logger.isInfoEnabled()) {
-                logger.info("NotificationManagerServiceImpl.sendWinnersTwiceWeeks: ending award period found");
+                logger.info("NotificationManagerServiceImpl.sendWinnersTwiceWeeks: " + endingPeriodId.size() +" ending award period founds");
             }
             for(Long aw : endingPeriodId){
                 sendWinners(aw);
