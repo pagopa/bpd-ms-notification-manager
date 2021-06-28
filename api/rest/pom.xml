@@ -4,11 +4,11 @@
     <parent>
         <artifactId>bpd-ms-notification-manager-api</artifactId>
         <groupId>it.gov.pagopa.bpd.ms.notification_manager</groupId>
-        <version>CEN-172-rc3</version>
+        <version>1.7.0</version>
     </parent>
 
     <groupId>it.gov.pagopa.bpd.ms.notification_manager.api</groupId>
     <artifactId>bpd-ms-notification-manager-api-rest</artifactId>
-    <version>CEN-172-rc3</version>
+    <version>1.7.0</version>
 
 </project>
