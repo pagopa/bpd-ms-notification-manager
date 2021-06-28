@@ -56,9 +56,6 @@ public interface BpdNotificationManagerController {
 
     @PostMapping(value = "/notifyEndPeriodOrGracePeriod", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    void notifyEndPeriodOrGracePeriod(
-            @ApiParam(required = false)
-            @RequestParam("fiscalCodes") List<String> fiscalCodes
-    ) throws IOException;
+    void notifyEndPeriodOrGracePeriod() throws IOException;
 
 }

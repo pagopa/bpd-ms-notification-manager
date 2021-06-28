@@ -66,7 +66,7 @@ class BpdNotificationManagerControllerImpl extends StatelessController implement
     }
 
     @Override
-    public void notifyEndPeriodOrGracePeriod(List<String> fiscalCodes) throws IOException {
-        notificationService.notifyEndPeriodOrEndGracePeriod(fiscalCodes);
+    public void notifyEndPeriodOrGracePeriod() throws IOException {
+        notificationService.notifyEndPeriodOrEndGracePeriod();
     }
 }

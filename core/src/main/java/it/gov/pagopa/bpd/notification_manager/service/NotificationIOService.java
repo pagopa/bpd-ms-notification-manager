@@ -10,5 +10,5 @@ public interface NotificationIOService {
 
     public int notifyWinnersPayments() throws IOException;
 
-    public void notifyEndPeriodOrEndGracePeriod(AwardPeriod awardPeriod, Boolean isEndPeriod, List<String> fiscalCodes) throws IOException;
+    public void notifyEndPeriodOrEndGracePeriod(AwardPeriod awardPeriod, Boolean isEndPeriod) throws IOException;
 }

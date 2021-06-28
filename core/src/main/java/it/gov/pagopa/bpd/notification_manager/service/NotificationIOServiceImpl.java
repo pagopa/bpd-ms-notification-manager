@@ -302,7 +302,7 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
     }
 
     @Override
-    public void notifyEndPeriodOrEndGracePeriod(AwardPeriod awardPeriod, Boolean isEndPeriod, List<String> fiscalCodes) throws IOException {
+    public void notifyEndPeriodOrEndGracePeriod(AwardPeriod awardPeriod, Boolean isEndPeriod) throws IOException {
 
         Long limit = notifyEndPeriodLimit;
 
@@ -310,6 +310,7 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
         String notifyMarkdown = markdownEndPeriod;
 
         String step = null;
+        int errorNot = 0;
 
         List<CitizenRanking> citizenToNotify = null;
 
@@ -320,15 +321,9 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
                 step="END_GRACE_PERIOD_"+awardPeriod.getAwardPeriodId().toString();
             }
 
-            if(fiscalCodes!=null && !fiscalCodes.isEmpty()){
-                citizenToNotify = citizenRankingDAO
-                        .extractRankingByAwardPeriodOrderByTransactionFiscalCodeByList(
-                                awardPeriod.getAwardPeriodId(), step, notifyEndPeriodLimit, fiscalCodes);
-            }else {
-                citizenToNotify = citizenRankingDAO
-                        .extractRankingByAwardPeriodOrderByTransactionFiscalCode(
-                                awardPeriod.getAwardPeriodId(), step, notifyEndPeriodLimit);
-            }
+            citizenToNotify = citizenRankingDAO
+                    .extractRankingByAwardPeriodOrderByTransactionFiscalCode(
+                            awardPeriod.getAwardPeriodId(), step, notifyEndPeriodLimit, awardPeriod.getEndDate());
 
             for(CitizenRanking citRanking : citizenToNotify){
                 Boolean updateCit = Boolean.TRUE;
@@ -365,14 +360,18 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
                     if(log.isErrorEnabled()){
                         log.error("Unable to send notify to citizen");
                     }
-                    //updateCit = Boolean.FALSE;
                     step = step+"_ERROR";
+                    errorNot++;
                 }
 
-                //if(updateCit){
-                    citizenDAO.updateCitizenWithNotificationStep(citRanking.getFiscalCode(), step);
-                //}
+                citizenDAO.updateCitizenWithNotificationStep(citRanking.getFiscalCode(), step);
             }
+
+            if(logger.isInfoEnabled()){
+                logger.info("NotificationIOServiceImpl.notifyEndPeriodOrEndGracePeriod - Sended notifies to " + citizenToNotify.size() + " citizens with " + errorNot + " errors");
+            }
+
+            errorNot = 0;
 
         } while(citizenToNotify!=null && !citizenToNotify.isEmpty());
     }
