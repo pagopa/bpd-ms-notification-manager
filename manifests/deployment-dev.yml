@@ -22,6 +22,8 @@ spec:
                 name: bpdmsnotificationmanager
             - secretRef:
                 name: postgres-credentials
+            - secretRef:
+                name: application-insights
             - configMapRef:
                 name: eventhub-logging
             - configMapRef:
