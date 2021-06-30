@@ -59,6 +59,8 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     private final int THREAD_POOL;
 
     private final int BONIFICA_RECESSO_SEARCH_DAYS;
+    private final String CONSAP_TWICE_START_DATE;
+    private final int CONSAP_TWICE_DAYS_FREQUENCY;
 
     @Autowired
     NotificationServiceImpl(
@@ -77,7 +79,9 @@ class NotificationServiceImpl extends BaseService implements NotificationService
             @Value("${core.NotificationService.updateRanking.limitUpdateRankingMilestone}") int LIMIT_UPDATE_RANKING_MILESTONE,
             @Value("${core.NotificationService.updateRanking.maxCitizenUpdateRankingMilestone}") Integer MAX_CITIZEN_UPDATE_RANKING_MILESTONE,
             @Value("${core.NotificationService.updateRanking.threadPoolRankingMilestone}") int THREAD_POOL,
-            @Value("${core.NotificationService.update.bonfifica.recesso.citizen.search.days}") int BONIFICA_RECESSO_SEARCH_DAYS) {
+            @Value("${core.NotificationService.update.bonfifica.recesso.citizen.search.days}") int BONIFICA_RECESSO_SEARCH_DAYS,
+            @Value("${core.NotificationService.sendWinnersTwiceWeeks.start.date}") String CONSAP_TWICE_START_DATE,
+            @Value("${core.NotificationService.sendWinnersTwiceWeeks.days.frequency}") int CONSAP_TWICE_DAYS_FREQUENCY) {
         this.citizenDAO = citizenDAO;
         this.notificationDtoMapper = notificationDtoMapper;
         this.notificationRestConnector = notificationRestConnector;
@@ -94,6 +98,8 @@ class NotificationServiceImpl extends BaseService implements NotificationService
         this.MAX_CITIZEN_UPDATE_RANKING_MILESTONE = MAX_CITIZEN_UPDATE_RANKING_MILESTONE;
         this.THREAD_POOL = THREAD_POOL;
         this.BONIFICA_RECESSO_SEARCH_DAYS=BONIFICA_RECESSO_SEARCH_DAYS;
+        this.CONSAP_TWICE_START_DATE=CONSAP_TWICE_START_DATE;
+        this.CONSAP_TWICE_DAYS_FREQUENCY=CONSAP_TWICE_DAYS_FREQUENCY;
     }
 
 
@@ -354,23 +360,45 @@ class NotificationServiceImpl extends BaseService implements NotificationService
             logger.info("NotificationManagerServiceImpl.sendWinnersTwiceWeeks start");
         }
 
-        List<AwardPeriod> awardPeriods = awardPeriodRestClient.findAllAwardPeriods();
+        Boolean isTwiceWeeks = Boolean.FALSE;
+        LocalDate now = LocalDate.now();
 
-        List<Long> endingPeriodId = new ArrayList<>();
-        for (AwardPeriod awardPeriod : awardPeriods) {
-            if (LocalDate.now().isAfter(awardPeriod.getEndDate()
-                    .plus(Period.ofDays(awardPeriod.getGracePeriod().intValue() + 1)))) {
-                endingPeriodId.add(awardPeriod.getAwardPeriodId());
+        LocalDate startDate = null;
+        try {
+            startDate = LocalDate.parse(CONSAP_TWICE_START_DATE, DateTimeFormatter.ISO_LOCAL_DATE);
+        }catch(Exception e){
+            if (logger.isErrorEnabled()) {
+                logger.error("NotificationManagerServiceImpl.sendWinnersTwiceWeeks - Unable to format startDate from: " + CONSAP_TWICE_START_DATE);
             }
         }
-        if (!endingPeriodId.isEmpty()) {
-            if (logger.isInfoEnabled()) {
-                logger.info("NotificationManagerServiceImpl.sendWinnersTwiceWeeks: ending award period found");
-            }
-            for(Long aw : endingPeriodId){
-                sendWinners(aw);
-            }
 
+        if(startDate!=null
+            && (now.isEqual(startDate)
+                || (now.isAfter(startDate)
+                    && (now.toEpochDay() - startDate.toEpochDay()) % CONSAP_TWICE_DAYS_FREQUENCY==0))
+        ){
+            isTwiceWeeks=Boolean.TRUE;
+        }
+
+        if(isTwiceWeeks){
+            List<AwardPeriod> awardPeriods = awardPeriodRestClient.findAllAwardPeriods();
+
+            List<Long> endingPeriodId = new ArrayList<>();
+            for (AwardPeriod awardPeriod : awardPeriods) {
+                if (now.isAfter(awardPeriod.getEndDate()
+                        .plus(Period.ofDays(awardPeriod.getGracePeriod().intValue() + 1)))) {
+                    endingPeriodId.add(awardPeriod.getAwardPeriodId());
+                }
+            }
+            if (!endingPeriodId.isEmpty()) {
+                if (logger.isInfoEnabled()) {
+                    logger.info("NotificationManagerServiceImpl.sendWinnersTwiceWeeks: ending award period found");
+                }
+                for(Long aw : endingPeriodId){
+                    sendWinners(aw);
+                }
+
+            }
         }
 
         if (logger.isInfoEnabled()) {
