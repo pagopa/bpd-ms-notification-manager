@@ -14,12 +14,14 @@ spec:
     spec:
       containers:
         - name: bpdmsnotificationmanager
-          image: cstaruatregistry.azurecr.io/bpdmsnotificationmanager
+          image: cstaruacr.azurecr.io/bpdmsnotificationmanager
           ports:
             - containerPort: 8080
           envFrom:
             - secretRef:
                 name: bpdmsnotificationmanager
+            - secretRef:
+                name: application-insights
             - secretRef:
                 name: postgres-credentials
             - configMapRef:
@@ -66,7 +68,4 @@ spec:
             successThreshold: 1
             failureThreshold: 20
           imagePullPolicy: Always
-      hostAliases:
-        - hostnames:
-            - bpd-event-uat.servicebus.windows.net
-          ip: 10.70.67.5
+
