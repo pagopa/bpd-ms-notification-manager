@@ -11,7 +11,4 @@ public interface CitizenJdbcDAO {
 
     int[] updateWinningCitizenStatusAndFilename(List<WinningCitizenDto> winningCitizenDtos);
 
-//    List<WinningCitizenDto> findWinners(Long endingPeriodId, Long maxRow);
-
-//    int[] updateWinningCitizenStatus(List<WinningCitizenDto> winningJdbcCitizens, WinningCitizenDto.Status status);
 }
