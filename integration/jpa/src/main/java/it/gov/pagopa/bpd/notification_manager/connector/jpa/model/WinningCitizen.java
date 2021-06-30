@@ -98,6 +98,6 @@ public class WinningCitizen extends BaseEntity {
     private String issuerCardId;
 
     public enum Status {
-        NEW, SENT, RECOVERY
+        NEW, SENT, RECOVERY, WIP
     }
 }

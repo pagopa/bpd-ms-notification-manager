@@ -1,6 +1,8 @@
 package it.gov.pagopa.bpd.notification_manager.service;
 
 import it.gov.pagopa.bpd.notification_manager.connector.WinnersSftpConnector;
+import it.gov.pagopa.bpd.notification_manager.connector.award_period.AwardPeriodRestClient;
+import it.gov.pagopa.bpd.notification_manager.connector.award_period.model.AwardPeriod;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.AwardWinnerErrorDAO;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.CitizenDAO;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.WinningCitizen;
@@ -21,10 +23,9 @@ import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,7 +33,7 @@ import static org.mockito.Mockito.*;
 
 @RunWith(SpringRunner.class)
 @TestPropertySource(locations = "classpath:config/notificationService.properties",
-        properties = "core.NotificationService.findWinners.maxRow=5")
+        properties = {"core.NotificationService.findWinners.maxRow=5", "core.NotificationService.findWinners.deleteTmpFiles.enable=true"})
 @ContextConfiguration(classes = {WinnersServiceImpl.class})
 public class WinnersServiceImplTest {
 
@@ -51,6 +52,8 @@ public class WinnersServiceImplTest {
     private AwardWinnerErrorDAO awardWinnerErrorDAO;
     @MockBean
     private WinnersSftpConnector winnersSftpConnectorMock;
+    @MockBean
+    private AwardPeriodRestClient awardPeriodRestClientMock;
     @Autowired
     private WinnersServiceImpl winnersService;
 
@@ -90,10 +93,10 @@ public class WinnersServiceImplTest {
                 });
     }
 
+
     @Test
     public void testSendWinnersWithResults() throws IOException {
-        Path tempDir = Files.createTempDirectory("csv_directory");
-        winnersService.sendWinners(0L, 0, tempDir, LocalDateTime.now(), 0);
+        winnersService.sendWinners(0L, null);
 
         verify(citizenDAOMock, atLeastOnce()).findWinners(Mockito.any(Long.class), Mockito.any(Long.class));
         verify(winnersSftpConnectorMock, atLeastOnce()).sendFile(Mockito.any(File.class));
@@ -102,10 +105,71 @@ public class WinnersServiceImplTest {
 
     @Test
     public void testSendWinnersWithoutResults() throws IOException {
-        Path tempDir = Files.createTempDirectory("csv_directory");
-        winnersService.sendWinners(-1L, 0, tempDir, LocalDateTime.now(), 0);
+        winnersService.sendWinners(-1L, null);
 
         verifyZeroInteractions(winnersSftpConnectorMock);
+    }
+
+
+    @Test
+    public void testUpdateWinners() {
+        winnersService.updateWinners(Mockito.anyLong());
+        verify(citizenDAOMock, only()).updateWinners(Mockito.anyLong());
+        verify(citizenDAOMock, times(1)).updateWinners(Mockito.anyLong());
+    }
+
+
+    @Test
+    public void testSendWinnersEndingPeriod() throws IOException {
+        BDDMockito.when(awardPeriodRestClientMock.findAllAwardPeriods())
+                .thenAnswer(invocation -> {
+                    List<AwardPeriod> result = new ArrayList<>();
+                    AwardPeriod awp1 = new AwardPeriod();
+                    awp1.setAwardPeriodId(2L);
+                    awp1.setEndDate(LocalDate.now().minus(Period.ofDays(15)));
+                    awp1.setGracePeriod(14L);
+                    awp1.setStartDate(LocalDate.now().minus(Period.ofDays(50)));
+                    result.add(awp1);
+                    AwardPeriod awp2 = new AwardPeriod();
+                    awp2.setAwardPeriodId(1L);
+                    awp2.setEndDate(LocalDate.now().minus(Period.ofDays(5)));
+                    awp2.setGracePeriod(15L);
+                    awp2.setStartDate(LocalDate.now().minus(Period.ofDays(40)));
+                    result.add(awp2);
+                    return result;
+                });
+
+        winnersService.updateAndSendWinners();
+
+//        verify(winnersService, atLeastOnce()).sendWinners(Mockito.any(Long.class), Mockito.anyInt(), Mockito.any(), Mockito.any(LocalDateTime.class), Mockito.anyInt());
+        verify(awardPeriodRestClientMock, only()).findAllAwardPeriods();
+    }
+
+
+    @Test
+    public void testSendWinners() throws IOException {
+        BDDMockito.when(awardPeriodRestClientMock.findAllAwardPeriods())
+                .thenAnswer(invocation -> {
+                    List<AwardPeriod> result = new ArrayList<>();
+                    AwardPeriod awp1 = new AwardPeriod();
+                    awp1.setAwardPeriodId(2L);
+                    awp1.setEndDate(LocalDate.now());
+                    awp1.setGracePeriod(15L);
+                    awp1.setStartDate(LocalDate.now().minus(Period.ofDays(50)));
+                    result.add(awp1);
+                    AwardPeriod awp2 = new AwardPeriod();
+                    awp2.setAwardPeriodId(1L);
+                    awp2.setEndDate(LocalDate.now().minus(Period.ofDays(5)));
+                    awp2.setGracePeriod(15L);
+                    awp2.setStartDate(LocalDate.now().minus(Period.ofDays(40)));
+                    result.add(awp2);
+                    return result;
+                });
+
+        winnersService.updateAndSendWinners();
+
+//        verifyZeroInteractions(winnersService);
+        verify(awardPeriodRestClientMock, only()).findAllAwardPeriods();
     }
 
 }
