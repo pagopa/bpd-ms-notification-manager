@@ -315,7 +315,9 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                     || (yesterday.isAfter(period.getEndDate())
                             && yesterday.isBefore(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())))))
             || awardPeriods.stream().anyMatch(period ->
-                yesterday.isEqual(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue()))) )
+                yesterday.isEqual(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())))
+        || (yesterday.isAfter(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue()))))
+             && yesterday.isBefore(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())).plus(Period.ofDays(10))))
         ){
 
             if(awardPeriods.stream().anyMatch(period ->
@@ -332,6 +334,8 @@ class NotificationServiceImpl extends BaseService implements NotificationService
             }else{
                 awardPeriod = awardPeriods.stream().filter(period ->
                                 yesterday.isEqual(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())))
+                                        || (yesterday.isAfter(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue()))))
+                                        && yesterday.isBefore(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())).plus(Period.ofDays(10)))
                         ).findAny().get();
             }
 
