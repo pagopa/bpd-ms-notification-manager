@@ -5,9 +5,13 @@ import eu.sia.meda.service.BaseService;
 import it.gov.pagopa.bpd.notification_manager.connector.WinnersSftpConnector;
 import it.gov.pagopa.bpd.notification_manager.connector.award_period.AwardPeriodRestClient;
 import it.gov.pagopa.bpd.notification_manager.connector.award_period.model.AwardPeriod;
+import it.gov.pagopa.bpd.notification_manager.connector.jdbc.CitizenJdbcDAO;
+import it.gov.pagopa.bpd.notification_manager.connector.jdbc.DaoHelper;
+import it.gov.pagopa.bpd.notification_manager.connector.jdbc.model.WinningCitizenDto;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.CitizenDAO;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.WinningCitizen;
 import it.gov.pagopa.bpd.notification_manager.encryption.EncryptUtil;
+import it.gov.pagopa.bpd.notification_manager.exception.UpdateWinnerStatusException;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -28,10 +32,13 @@ import java.security.NoSuchProviderException;
 import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @see WinnersService
@@ -48,8 +55,10 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
     private static final DateTimeFormatter ONLY_DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter CSV_NAME_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("ddMMyyyy.HHmmss");
     private static final String CSV_NAME_SEPARATOR = ".";
+    static final String ERROR_MESSAGE_TEMPLATE = "updateWinnersStatus: affected %d rows of %d";
 
     private final CitizenDAO citizenDAO;
+    private final CitizenJdbcDAO citizenJdbcDAO;
     private final WinnersSftpConnector winnersSftpConnector;
     private final AwardPeriodRestClient awardPeriodRestClient;
     private final String CSV_DELIMITER;
@@ -65,7 +74,7 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
     @Autowired
     WinnersServiceImpl(
             CitizenDAO citizenDAO,
-//            CitizenJdbcDAO citizenJdbcDAO,
+            CitizenJdbcDAO citizenJdbcDAO,
             WinnersSftpConnector winnersSftpConnector,
             AwardPeriodRestClient awardPeriodRestClient,
             @Value("${core.NotificationService.findWinners.delimiter}") String delimiter,
@@ -78,6 +87,7 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
             @Value("${core.NotificationService.findWinners.updateStatus.enable}") boolean updateStatusEnabled,
             @Value("${core.NotificationService.findWinners.deleteTmpFiles.enable}") boolean deleteTmpFilesEnable) {
         this.citizenDAO = citizenDAO;
+        this.citizenJdbcDAO = citizenJdbcDAO;
         this.winnersSftpConnector = winnersSftpConnector;
         this.awardPeriodRestClient = awardPeriodRestClient;
         CSV_DELIMITER = delimiter;
@@ -93,7 +103,7 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
 
 
     @Scheduled(cron = "${core.NotificationService.updateAndSendWinners.scheduler}")
-    public void updateAndSendWinners() throws IOException {
+    public void updateAndSendWinners() {
 
         if (logger.isInfoEnabled()) {
             logger.info("NotificationManagerServiceImpl.updateAndSendWinners start");
@@ -186,6 +196,14 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
 
 
     private void sendWinners(Long awardPeriodId, String filenamePrefix, int totalChunkCount, int fileChunkCount) {
+        if (log.isDebugEnabled()) {
+            logger.debug("awardPeriodId = {}, filenamePrefix = {}, totalChunkCount = {}, fileChunkCount = {}, maxRow = {}",
+                    awardPeriodId,
+                    filenamePrefix,
+                    totalChunkCount,
+                    fileChunkCount,
+                    maxRow);
+        }
         int fetchedRecord;
 
         do {
@@ -196,16 +214,35 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
             fetchedRecord = winners.size();
             logger.info("Fetched {} winners", fetchedRecord);
 
-            winners.forEach(winner -> winner.setStatus(WinningCitizen.Status.WIP));
             if (updateStatusEnabled) {
-                citizenDAO.saveAll(winners);//TODO: save jdbc
+                OffsetDateTime now = OffsetDateTime.now();
+                List<WinningCitizenDto> winningCitizenDtos = winners.stream()
+                        .map(winner -> WinningCitizenDto.builder()
+                                .id(winner.getId())
+                                .status(WinningCitizen.Status.WIP.name())
+                                .updateDate(now)
+                                .updateUser("SEND_WINNERS")
+                                .build())
+                        .collect(Collectors.toList());
+                int[] affectedRows = citizenJdbcDAO.updateWinningCitizenStatus(winningCitizenDtos);
+                checkErrors(winningCitizenDtos.size(), affectedRows);
             }
 
-            sendWinners(winners, filenamePrefix, fileChunkCount, totalChunkCount);
+            String filename = sendWinners(winners, filenamePrefix, fileChunkCount, totalChunkCount);
 
-            winners.forEach(winner -> winner.setStatus(WinningCitizen.Status.SENT));
             if (updateStatusEnabled) {
-                citizenDAO.saveAll(winners);//TODO: save jdbc
+                OffsetDateTime now = OffsetDateTime.now();
+                List<WinningCitizenDto> winningCitizenDtos = winners.stream()
+                        .map(winner -> WinningCitizenDto.builder()
+                                .id(winner.getId())
+                                .status(WinningCitizen.Status.SENT.name())
+                                .updateDate(now)
+                                .updateUser("SEND_WINNERS")
+                                .chunkFilename(filename)
+                                .build())
+                        .collect(Collectors.toList());
+                int[] affectedRows = citizenJdbcDAO.updateWinningCitizenStatusAndFilename(winningCitizenDtos);
+                checkErrors(winningCitizenDtos.size(), affectedRows);
             }
 
             logger.info("Completed sendWinners chunk {} of {}.", fileChunkCount, totalChunkCount);
@@ -216,13 +253,14 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
     }
 
 
-    private void sendWinners(List<WinningCitizen> winners, String filenamePrefix, int fileChunkCount, int totalChunkCount) {
+    private String sendWinners(List<WinningCitizen> winners, String filenamePrefix, int fileChunkCount, int totalChunkCount) {
+        String fileName = null;
         if (winners != null && !winners.isEmpty()) {
 
             String totalFileNumber = TWO_DIGITS_FORMAT.format(totalChunkCount);
             String currentFileNumber = TWO_DIGITS_FORMAT.format(fileChunkCount);
 
-            String fileName = filenamePrefix + CSV_NAME_SEPARATOR
+            fileName = filenamePrefix + CSV_NAME_SEPARATOR
                     + currentFileNumber + "_" + totalFileNumber + CSV_NAME_SEPARATOR
                     + winners.size()
                     + ".csv";
@@ -235,7 +273,6 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
                 for (WinningCitizen winner : winners) {
                     String csvRow = generateCsvRow(winner);
                     csvPrintWriter.println(csvRow);
-                    winner.setChunkFilename(fileName);
                 }
 
                 csvPrintWriter.close();
@@ -248,6 +285,33 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
 
             } catch (IOException | NoSuchProviderException | PGPException e) {
                 throw new RuntimeException(e);
+            }
+        }
+
+        return fileName;
+    }
+
+
+    private void checkErrors(int statementsCount, int[] affectedRows) {
+        if (log.isTraceEnabled()) {
+            log.trace("WinnersServiceImpl.checkErrors");
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("statementsCount = {}, affectedRows = {}", statementsCount, Arrays.toString(affectedRows));
+        }
+
+        if (affectedRows.length != statementsCount) {
+            String message = String.format(ERROR_MESSAGE_TEMPLATE, affectedRows.length, statementsCount);
+            throw new UpdateWinnerStatusException(message);
+
+        } else {
+            long failedUpdateCount = Arrays.stream(affectedRows)
+                    .filter(DaoHelper.isStatementResultKO)
+                    .count();
+
+            if (failedUpdateCount > 0) {
+                String message = String.format(ERROR_MESSAGE_TEMPLATE, statementsCount - failedUpdateCount, statementsCount);
+                throw new UpdateWinnerStatusException(message);
             }
         }
     }

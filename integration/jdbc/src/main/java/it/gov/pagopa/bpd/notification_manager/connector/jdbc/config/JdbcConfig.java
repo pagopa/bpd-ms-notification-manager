@@ -1,29 +1,23 @@
 package it.gov.pagopa.bpd.notification_manager.connector.jdbc.config;
 
 
-import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.data.jdbc.JdbcRepositoriesAutoConfiguration;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Repository;
-
-import javax.sql.DataSource;
 
 //@EnableJpaRepositories(
 //        excludeFilters = @ComponentScan.Filter(Repository.class)
 //)
 @Configuration
+@EnableAutoConfiguration(exclude = {JdbcRepositoriesAutoConfiguration.class})
 @PropertySource("classpath:config/jdbcConfig.properties")
 class JdbcConfig {
 
-//    @Bean("citizenJdbcTemplate")
-////    @Primary
-//    public JdbcTemplate citizenJdbcTemplate() {
-//        return new JdbcTemplate(citizenJdbcDataSource());
+    //    @Bean
+//    @Primary
+//    public JdbcTemplate citizenJdbcTemplate(DataSource dataSource) {
+//        return new JdbcTemplate(dataSource);
 //    }
 //
 //    @Bean("citizenJdbcDataSource")

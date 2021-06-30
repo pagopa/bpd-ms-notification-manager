@@ -1,15 +1,17 @@
 package it.gov.pagopa.bpd.notification_manager.connector.jdbc;
 
 
-import it.gov.pagopa.bpd.notification_manager.connector.jdbc.model.WinningJdbcCitizen;
+import it.gov.pagopa.bpd.notification_manager.connector.jdbc.model.WinningCitizenDto;
 
 import java.util.List;
 
 public interface CitizenJdbcDAO {
 
-    int[] updateWinningCitizen(List<WinningJdbcCitizen> winningJdbcCitizens);
+    int[] updateWinningCitizenStatus(List<WinningCitizenDto> winningCitizenDtos);
 
-    List<WinningJdbcCitizen> findWinners(Long endingPeriodId, Long maxRow);
+    int[] updateWinningCitizenStatusAndFilename(List<WinningCitizenDto> winningCitizenDtos);
 
-//    int[] updateWinningCitizenStatus(List<WinningJdbcCitizen> winningJdbcCitizens, WinningJdbcCitizen.Status status);
+//    List<WinningCitizenDto> findWinners(Long endingPeriodId, Long maxRow);
+
+//    int[] updateWinningCitizenStatus(List<WinningCitizenDto> winningJdbcCitizens, WinningCitizenDto.Status status);
 }
