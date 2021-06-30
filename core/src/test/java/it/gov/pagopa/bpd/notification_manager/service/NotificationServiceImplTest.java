@@ -1,5 +1,6 @@
 package it.gov.pagopa.bpd.notification_manager.service;
 
+import it.gov.pagopa.bpd.notification_manager.connector.award_period.AwardPeriodRestClient;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.NotificationRestConnector;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.NotificationDTO;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.NotificationResource;
@@ -52,6 +53,9 @@ public class NotificationServiceImplTest {
 
     @Autowired
     private NotificationServiceImpl notificationService;
+
+    @MockBean
+    private AwardPeriodRestClient awardPeriodRestClientMock;
 
 
     @Test

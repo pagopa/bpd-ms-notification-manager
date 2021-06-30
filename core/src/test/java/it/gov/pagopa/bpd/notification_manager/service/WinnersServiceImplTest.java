@@ -3,9 +3,13 @@ package it.gov.pagopa.bpd.notification_manager.service;
 import it.gov.pagopa.bpd.notification_manager.connector.WinnersSftpConnector;
 import it.gov.pagopa.bpd.notification_manager.connector.award_period.AwardPeriodRestClient;
 import it.gov.pagopa.bpd.notification_manager.connector.award_period.model.AwardPeriod;
+import it.gov.pagopa.bpd.notification_manager.connector.jdbc.CitizenJdbcDAO;
+import it.gov.pagopa.bpd.notification_manager.connector.jdbc.model.WinningCitizenDto;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.AwardWinnerErrorDAO;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.CitizenDAO;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.WinningCitizen;
+import it.gov.pagopa.bpd.notification_manager.exception.UpdateWinnerStatusException;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.BDDMockito;
@@ -27,6 +31,8 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import static org.mockito.Mockito.*;
@@ -36,6 +42,14 @@ import static org.mockito.Mockito.*;
         properties = {"core.NotificationService.findWinners.maxRow=5", "core.NotificationService.findWinners.deleteTmpFiles.enable=true"})
 @ContextConfiguration(classes = {WinnersServiceImpl.class})
 public class WinnersServiceImplTest {
+
+    private enum Error {
+        UPDATE_WINNER_STATUS
+    }
+
+    private enum MissRecord {
+        UPDATE_WINNER_STATUS
+    }
 
     static {
         try {
@@ -54,8 +68,13 @@ public class WinnersServiceImplTest {
     private WinnersSftpConnector winnersSftpConnectorMock;
     @MockBean
     private AwardPeriodRestClient awardPeriodRestClientMock;
+    @MockBean
+    private CitizenJdbcDAO citizenJdbcDAOMock;
     @Autowired
     private WinnersServiceImpl winnersService;
+
+    private Error error;
+    private MissRecord missRecords;
 
     static String readFile(String path, Charset encoding)
             throws IOException {
@@ -91,23 +110,92 @@ public class WinnersServiceImplTest {
 
                     return result;
                 });
+
+        BDDMockito.when(citizenJdbcDAOMock.updateWinningCitizenStatus(Mockito.any()))
+                .thenAnswer(invocationOnMock -> {
+                    Collection<WinningCitizenDto> rankings = invocationOnMock.getArgument(0, Collection.class);
+                    int size = rankings.size();
+                    if (!rankings.isEmpty() && Error.UPDATE_WINNER_STATUS == error) {
+                        size--;
+                    }
+                    int[] result = new int[size];
+                    Arrays.fill(result, 1);
+                    if (!rankings.isEmpty() && MissRecord.UPDATE_WINNER_STATUS == missRecords) {
+                        result[0] = 0;
+                    }
+                    return result;
+                });
+
+        BDDMockito.when(citizenJdbcDAOMock.updateWinningCitizenStatusAndFilename(Mockito.any()))
+                .thenAnswer(invocationOnMock -> {
+                    Collection<WinningCitizenDto> rankings = invocationOnMock.getArgument(0, Collection.class);
+                    int size = rankings.size();
+                    if (!rankings.isEmpty() && Error.UPDATE_WINNER_STATUS == error) {
+                        size--;
+                    }
+                    int[] result = new int[size];
+                    Arrays.fill(result, 1);
+                    if (!rankings.isEmpty() && MissRecord.UPDATE_WINNER_STATUS == missRecords) {
+                        result[0] = 0;
+                    }
+                    return result;
+                });
+    }
+
+
+    @Before
+    public void init() {
+        error = null;
+        missRecords = null;
     }
 
 
     @Test
-    public void testSendWinnersWithResults() throws IOException {
+    public void testSendWinnersWithResults() {
         winnersService.sendWinners(0L, null);
 
         verify(citizenDAOMock, atLeastOnce()).findWinners(Mockito.any(Long.class), Mockito.any(Long.class));
         verify(winnersSftpConnectorMock, atLeastOnce()).sendFile(Mockito.any(File.class));
-
     }
 
+
     @Test
-    public void testSendWinnersWithoutResults() throws IOException {
+    public void testSendWinnersWithoutResults() {
         winnersService.sendWinners(-1L, null);
 
         verifyZeroInteractions(winnersSftpConnectorMock);
+    }
+
+
+    @Test(expected = UpdateWinnerStatusException.class)
+    public void testSendWinnersWithUpdateStatusError() {
+        error = Error.UPDATE_WINNER_STATUS;
+
+        try {
+            winnersService.sendWinners(0L, null);
+
+        } catch (Exception e) {
+            verify(citizenDAOMock, atLeastOnce()).findWinners(Mockito.any(Long.class), Mockito.any(Long.class));
+            verify(winnersSftpConnectorMock, never()).sendFile(Mockito.any(File.class));
+
+            throw e;
+        }
+    }
+
+
+    @Test(expected = UpdateWinnerStatusException.class)
+    public void testSendWinnersWithUpdateStatusMissedRecords() {
+        missRecords = MissRecord.UPDATE_WINNER_STATUS;
+
+        try {
+            winnersService.sendWinners(0L, null);
+
+        } catch (Exception e) {
+            verify(citizenDAOMock, atLeastOnce()).findWinners(Mockito.any(Long.class), Mockito.any(Long.class));
+            verify(winnersSftpConnectorMock, never()).sendFile(Mockito.any(File.class));
+
+            throw e;
+        }
     }
 
 

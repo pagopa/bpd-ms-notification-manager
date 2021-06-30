@@ -70,6 +70,8 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
     private final boolean sftpEnable;
     private final boolean updateStatusEnabled;
     private final boolean deleteTmpFilesEnable;
+    private final String CONSAP_TWICE_START_DATE;
+    private final int CONSAP_TWICE_DAYS_FREQUENCY;
 
     @Autowired
     WinnersServiceImpl(
@@ -85,7 +87,9 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
             @Value("${core.NotificationService.findWinners.publicKey}") String publicKey,
             @Value("${core.NotificationService.findWinners.sftp.enable}") boolean sftpEnable,
             @Value("${core.NotificationService.findWinners.updateStatus.enable}") boolean updateStatusEnabled,
-            @Value("${core.NotificationService.findWinners.deleteTmpFiles.enable}") boolean deleteTmpFilesEnable) {
+            @Value("${core.NotificationService.findWinners.deleteTmpFiles.enable}") boolean deleteTmpFilesEnable,
+            @Value("${core.NotificationService.sendWinnersTwiceWeeks.start.date}") String CONSAP_TWICE_START_DATE,
+            @Value("${core.NotificationService.sendWinnersTwiceWeeks.days.frequency}") int CONSAP_TWICE_DAYS_FREQUENCY) {
         this.citizenDAO = citizenDAO;
         this.citizenJdbcDAO = citizenJdbcDAO;
         this.winnersSftpConnector = winnersSftpConnector;
@@ -99,6 +103,8 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
         this.sftpEnable = sftpEnable;
         this.updateStatusEnabled = updateStatusEnabled;
         this.deleteTmpFilesEnable = deleteTmpFilesEnable;
+        this.CONSAP_TWICE_START_DATE = CONSAP_TWICE_START_DATE;
+        this.CONSAP_TWICE_DAYS_FREQUENCY = CONSAP_TWICE_DAYS_FREQUENCY;
     }
 
 
@@ -333,8 +339,8 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
         }
 
 
-        if (winner.getTechnicalAccountHolder()!=null
-                && winner.getIssuerCardId()!=null) {
+        if (winner.getTechnicalAccountHolder() != null
+                && winner.getIssuerCardId() != null) {
             paymentReasonBuilder.append(PAYMENT_REASON_DELIMITER)
                     .append(winner.getIssuerCardId());
         }
@@ -471,6 +477,60 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
         logger.info("Sending test file");
         winnersSftpConnector.sendFile(fileToSend);
         logger.info("Sent test file");
+    }
+
+
+    @Scheduled(cron = "${core.NotificationService.sendWinnersTwiceWeeks.scheduler}")
+    public void sendWinnersTwiceWeeks() {
+
+        if (logger.isInfoEnabled()) {
+            logger.info("NotificationManagerServiceImpl.sendWinnersTwiceWeeks start");
+        }
+
+        Boolean isTwiceWeeks = Boolean.FALSE;
+        LocalDate now = LocalDate.now();
+
+        LocalDate startDate = null;
+        try {
+            startDate = LocalDate.parse(CONSAP_TWICE_START_DATE, DateTimeFormatter.ISO_LOCAL_DATE);
+        } catch (Exception e) {
+            if (logger.isErrorEnabled()) {
+                logger.error("NotificationManagerServiceImpl.sendWinnersTwiceWeeks - Unable to format startDate from: " + CONSAP_TWICE_START_DATE);
+            }
+        }
+
+        if (startDate != null
+                && (now.isEqual(startDate)
+                || (now.isAfter(startDate)
+                && (now.toEpochDay() - startDate.toEpochDay()) % CONSAP_TWICE_DAYS_FREQUENCY == 0))
+        ) {
+            isTwiceWeeks = Boolean.TRUE;
+        }
+
+        if (isTwiceWeeks) {
+            List<AwardPeriod> awardPeriods = awardPeriodRestClient.findAllAwardPeriods();
+
+            List<Long> endingPeriodId = new ArrayList<>();
+            for (AwardPeriod awardPeriod : awardPeriods) {
+                if (now.isAfter(awardPeriod.getEndDate()
+                        .plus(Period.ofDays(awardPeriod.getGracePeriod().intValue() + 1)))) {
+                    endingPeriodId.add(awardPeriod.getAwardPeriodId());
+                }
+            }
+            if (!endingPeriodId.isEmpty()) {
+                if (logger.isInfoEnabled()) {
+                    logger.info("NotificationManagerServiceImpl.sendWinnersTwiceWeeks: ending award period found");
+                }
+                for (Long aw : endingPeriodId) {
+                    sendWinners(aw, null);
+                }
+
+            }
+        }
+
+        if (logger.isInfoEnabled()) {
+            logger.info("NotificationManagerServiceImpl.sendWinnersTwiceWeeks end");
+        }
     }
 
 }
