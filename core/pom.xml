@@ -4,17 +4,21 @@
     <parent>
         <artifactId>bpd-ms-notification-manager</artifactId>
         <groupId>it.gov.pagopa.bpd.ms</groupId>
-        <version>CEN-131-rc2</version>
+        <version>cen_115_131_rc1</version>
     </parent>
 
     <groupId>it.gov.pagopa.bpd.ms.notification_manager</groupId>
     <artifactId>bpd-ms-notification-manager-core</artifactId>
-    <version>CEN-131-rc2</version>
+    <version>cen_115_131_rc1</version>
 
     <dependencies>
         <dependency>
             <groupId>it.gov.pagopa.bpd.ms.notification_manager.integration</groupId>
             <artifactId>bpd-ms-notification-manager-integration-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>it.gov.pagopa.bpd.ms.notification_manager.integration</groupId>
+            <artifactId>bpd-ms-notification-manager-integration-jdbc</artifactId>
         </dependency>
         <dependency>
             <groupId>it.gov.pagopa.bpd.ms.notification_manager.integration</groupId>

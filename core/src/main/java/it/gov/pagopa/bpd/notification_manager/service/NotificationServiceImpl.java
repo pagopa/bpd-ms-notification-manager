@@ -79,9 +79,6 @@ class NotificationServiceImpl extends BaseService implements NotificationService
         this.MAX_CITIZEN_UPDATE_RANKING_MILESTONE = MAX_CITIZEN_UPDATE_RANKING_MILESTONE;
         this.THREAD_POOL = THREAD_POOL;
         this.BONIFICA_RECESSO_SEARCH_DAYS = BONIFICA_RECESSO_SEARCH_DAYS;
-        this.BONIFICA_RECESSO_SEARCH_DAYS = BONIFICA_RECESSO_SEARCH_DAYS;
-        this.CONSAP_TWICE_START_DATE = CONSAP_TWICE_START_DATE;
-        this.CONSAP_TWICE_DAYS_FREQUENCY = CONSAP_TWICE_DAYS_FREQUENCY;
     }
 
 
@@ -246,58 +243,5 @@ class NotificationServiceImpl extends BaseService implements NotificationService
         }
     }
 
-    @Override
-    @Scheduled(cron = "${core.NotificationService.sendWinnersTwiceWeeks.scheduler}")
-    public void sendWinnersTwiceWeeks() throws IOException {
-
-        if (logger.isInfoEnabled()) {
-            logger.info("NotificationManagerServiceImpl.sendWinnersTwiceWeeks start");
-        }
-
-        Boolean isTwiceWeeks = Boolean.FALSE;
-        LocalDate now = LocalDate.now();
-
-        LocalDate startDate = null;
-        try {
-            startDate = LocalDate.parse(CONSAP_TWICE_START_DATE, DateTimeFormatter.ISO_LOCAL_DATE);
-        } catch (Exception e) {
-            if (logger.isErrorEnabled()) {
-                logger.error("NotificationManagerServiceImpl.sendWinnersTwiceWeeks - Unable to format startDate from: " + CONSAP_TWICE_START_DATE);
-            }
-        }
-
-        if (startDate != null
-                && (now.isEqual(startDate)
-                || (now.isAfter(startDate)
-                && (now.toEpochDay() - startDate.toEpochDay()) % CONSAP_TWICE_DAYS_FREQUENCY == 0))
-        ) {
-            isTwiceWeeks = Boolean.TRUE;
-        }
-
-        if (isTwiceWeeks) {
-            List<AwardPeriod> awardPeriods = awardPeriodRestClient.findAllAwardPeriods();
-
-            List<Long> endingPeriodId = new ArrayList<>();
-            for (AwardPeriod awardPeriod : awardPeriods) {
-                if (now.isAfter(awardPeriod.getEndDate()
-                        .plus(Period.ofDays(awardPeriod.getGracePeriod().intValue() + 1)))) {
-                    endingPeriodId.add(awardPeriod.getAwardPeriodId());
-                }
-            }
-            if (!endingPeriodId.isEmpty()) {
-                if (logger.isInfoEnabled()) {
-                    logger.info("NotificationManagerServiceImpl.sendWinnersTwiceWeeks: ending award period found");
-                }
-                for (Long aw : endingPeriodId) {
-                    sendWinners(aw);
-                }
-
-            }
-        }
-
-        if (logger.isInfoEnabled()) {
-            logger.info("NotificationManagerServiceImpl.sendWinnersTwiceWeeks end");
-        }
-    }
 }
 
