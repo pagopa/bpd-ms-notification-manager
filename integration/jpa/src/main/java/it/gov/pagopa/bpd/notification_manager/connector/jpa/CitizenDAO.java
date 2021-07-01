@@ -3,6 +3,7 @@ package it.gov.pagopa.bpd.notification_manager.connector.jpa;
 
 import it.gov.pagopa.bpd.common.connector.jpa.CrudJpaDAO;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.WinningCitizen;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -86,4 +87,12 @@ public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long> {
 
     @Query(nativeQuery = true, value = "SELECT * from update_bonifica_recesso_citizen(:citizenRange)")
     Boolean updateBonificaRecessoMonolitica(@Param("citizenRange") String citizenRange);
+
+    @Modifying
+    @Query(nativeQuery = true, value = "UPDATE bpd_citizen " +
+            "SET notification_step_s= coalesce(notification_step_s,'') || :notStep || ',' " +
+            "WHERE fiscal_code_s = :fiscalCode")
+    void updateCitizenWithNotificationStep(@Param("fiscalCode") String fiscalCode,
+                                           @Param("notStep") String notStep);
+
 }

@@ -20,9 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchProviderException;
 import java.text.DecimalFormat;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -186,8 +184,15 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
                     .append(winner.getFiscalCode());
         }
 
-        String ticketId = winner.getTicketId()!=null ? winner.getTicketId().toString() : new String("");
-        String relatedId= winner.getRelatedUniqueId() != null ? winner.getRelatedUniqueId().toString() : new String("");
+
+        if (winner.getTechnicalAccountHolder() != null
+                && winner.getIssuerCardId() != null) {
+            paymentReasonBuilder.append(PAYMENT_REASON_DELIMITER)
+                    .append(winner.getIssuerCardId());
+        }
+
+        String ticketId = winner.getTicketId() != null ? winner.getTicketId().toString() : new String("");
+        String relatedId = winner.getRelatedUniqueId() != null ? winner.getRelatedUniqueId().toString() : new String("");
 
         return NINE_DIGITS_FORMAT.format(winner.getId()) +
                 CSV_DELIMITER +

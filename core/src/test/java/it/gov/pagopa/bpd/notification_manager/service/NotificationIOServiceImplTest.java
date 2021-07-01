@@ -1,11 +1,11 @@
 package it.gov.pagopa.bpd.notification_manager.service;
 
-import it.gov.pagopa.bpd.notification_manager.connector.award_period.AwardPeriodRestClient;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.NotificationRestConnector;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.NotificationDTO;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.NotificationResource;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.AwardWinnerErrorDAO;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.CitizenDAO;
+import it.gov.pagopa.bpd.notification_manager.connector.jpa.CitizenRankingDAO;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.WinningCitizen;
 import it.gov.pagopa.bpd.notification_manager.mapper.NotificationDtoMapper;
 import org.junit.Test;
@@ -26,7 +26,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @RunWith(SpringRunner.class)
 @TestPropertySource(locations = "classpath:config/notificationService.properties")
@@ -47,6 +48,9 @@ public class NotificationIOServiceImplTest {
 
     @Autowired
     private NotificationIOServiceImpl notificationIOService;
+
+    @MockBean
+    private CitizenRankingDAO citizenRankingDAOMock;
 
     @PostConstruct
     public void configureMock() {

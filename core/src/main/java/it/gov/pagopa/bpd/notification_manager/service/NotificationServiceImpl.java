@@ -59,6 +59,8 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     private final int THREAD_POOL;
 
     private final int BONIFICA_RECESSO_SEARCH_DAYS;
+    private final String CONSAP_TWICE_START_DATE;
+    private final int CONSAP_TWICE_DAYS_FREQUENCY;
 
     @Autowired
     NotificationServiceImpl(
@@ -77,7 +79,9 @@ class NotificationServiceImpl extends BaseService implements NotificationService
             @Value("${core.NotificationService.updateRanking.limitUpdateRankingMilestone}") int LIMIT_UPDATE_RANKING_MILESTONE,
             @Value("${core.NotificationService.updateRanking.maxCitizenUpdateRankingMilestone}") Integer MAX_CITIZEN_UPDATE_RANKING_MILESTONE,
             @Value("${core.NotificationService.updateRanking.threadPoolRankingMilestone}") int THREAD_POOL,
-            @Value("${core.NotificationService.update.bonfifica.recesso.citizen.search.days}") int BONIFICA_RECESSO_SEARCH_DAYS) {
+            @Value("${core.NotificationService.update.bonfifica.recesso.citizen.search.days}") int BONIFICA_RECESSO_SEARCH_DAYS,
+            @Value("${core.NotificationService.sendWinnersTwiceWeeks.start.date}") String CONSAP_TWICE_START_DATE,
+            @Value("${core.NotificationService.sendWinnersTwiceWeeks.days.frequency}") int CONSAP_TWICE_DAYS_FREQUENCY) {
         this.citizenDAO = citizenDAO;
         this.notificationDtoMapper = notificationDtoMapper;
         this.notificationRestConnector = notificationRestConnector;
@@ -93,7 +97,9 @@ class NotificationServiceImpl extends BaseService implements NotificationService
         this.LIMIT_UPDATE_RANKING_MILESTONE = LIMIT_UPDATE_RANKING_MILESTONE;
         this.MAX_CITIZEN_UPDATE_RANKING_MILESTONE = MAX_CITIZEN_UPDATE_RANKING_MILESTONE;
         this.THREAD_POOL = THREAD_POOL;
-        this.BONIFICA_RECESSO_SEARCH_DAYS=BONIFICA_RECESSO_SEARCH_DAYS;
+        this.BONIFICA_RECESSO_SEARCH_DAYS = BONIFICA_RECESSO_SEARCH_DAYS;
+        this.CONSAP_TWICE_START_DATE = CONSAP_TWICE_START_DATE;
+        this.CONSAP_TWICE_DAYS_FREQUENCY = CONSAP_TWICE_DAYS_FREQUENCY;
     }
 
 
@@ -288,13 +294,61 @@ class NotificationServiceImpl extends BaseService implements NotificationService
         if(log.isInfoEnabled()){
             log.info("NotificationServiceImpl.updateBonificaRecesso - start");
         }
-        OffsetDateTime now=OffsetDateTime.now();
+        OffsetDateTime now = OffsetDateTime.now();
         OffsetDateTime citizenRange = now.minusDays(BONIFICA_RECESSO_SEARCH_DAYS);
 
         citizenDAO.updateBonificaRecessoMonolitica(citizenRange.format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss")));
 
-        if(log.isInfoEnabled()){
+        if (log.isInfoEnabled()) {
             log.info("NotificationServiceImpl.updateBonificaRecesso - end");
+        }
+    }
+
+    @Override
+    @Scheduled(cron = "${core.NotificationService.notify.end.period.scheduled}")
+    public void notifyEndPeriodOrEndGracePeriod() throws IOException {
+        if (logger.isInfoEnabled()) {
+            logger.info("NotificationManagerServiceImpl.notifyEndPeriodOrEndGracePeriod start");
+        }
+
+        List<AwardPeriod> awardPeriods = awardPeriodRestClient.findAllAwardPeriods();
+
+        AwardPeriod awardPeriod = null;
+        Boolean isEndPeriod = Boolean.FALSE;
+        LocalDate yesterday = LocalDate.now().minus(Period.ofDays(1));
+
+        if (awardPeriods.stream().anyMatch(period ->
+                yesterday.isEqual(period.getEndDate())
+                        || (yesterday.isAfter(period.getEndDate())
+                        && yesterday.isBefore(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())))))
+                || awardPeriods.stream().anyMatch(period ->
+                yesterday.isEqual(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue()))))
+        ) {
+
+            if (awardPeriods.stream().anyMatch(period ->
+                    yesterday.isEqual(period.getEndDate())
+                            || (yesterday.isAfter(period.getEndDate())
+                            && yesterday.isBefore(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())))))
+            ) {
+                isEndPeriod = Boolean.TRUE;
+                awardPeriod = awardPeriods.stream().filter(period ->
+                        yesterday.isEqual(period.getEndDate())
+                                || (yesterday.isAfter(period.getEndDate())
+                                && yesterday.isBefore(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())))
+                        )).findAny().get();
+            } else {
+                awardPeriod = awardPeriods.stream().filter(period ->
+                        yesterday.isEqual(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())))
+                ).findAny().get();
+            }
+
+            if (awardPeriod != null) {
+                notificationIOService.notifyEndPeriodOrEndGracePeriod(awardPeriod, isEndPeriod);
+            }
+        }
+
+        if (logger.isInfoEnabled()) {
+            logger.info("NotificationManagerServiceImpl.notifyEndPeriodOrEndGracePeriod end");
         }
     }
 
@@ -306,23 +360,45 @@ class NotificationServiceImpl extends BaseService implements NotificationService
             logger.info("NotificationManagerServiceImpl.sendWinnersTwiceWeeks start");
         }
 
-        List<AwardPeriod> awardPeriods = awardPeriodRestClient.findAllAwardPeriods();
+        Boolean isTwiceWeeks = Boolean.FALSE;
+        LocalDate now = LocalDate.now();
 
-        List<Long> endingPeriodId = new ArrayList<>();
-        for (AwardPeriod awardPeriod : awardPeriods) {
-            if (LocalDate.now().isAfter(awardPeriod.getEndDate()
-                    .plus(Period.ofDays(awardPeriod.getGracePeriod().intValue() + 1)))) {
-                endingPeriodId.add(awardPeriod.getAwardPeriodId());
+        LocalDate startDate = null;
+        try {
+            startDate = LocalDate.parse(CONSAP_TWICE_START_DATE, DateTimeFormatter.ISO_LOCAL_DATE);
+        } catch (Exception e) {
+            if (logger.isErrorEnabled()) {
+                logger.error("NotificationManagerServiceImpl.sendWinnersTwiceWeeks - Unable to format startDate from: " + CONSAP_TWICE_START_DATE);
             }
         }
-        if (!endingPeriodId.isEmpty()) {
-            if (logger.isInfoEnabled()) {
-                logger.info("NotificationManagerServiceImpl.sendWinnersTwiceWeeks: ending award period found");
-            }
-            for(Long aw : endingPeriodId){
-                sendWinners(aw);
-            }
 
+        if (startDate != null
+                && (now.isEqual(startDate)
+                || (now.isAfter(startDate)
+                && (now.toEpochDay() - startDate.toEpochDay()) % CONSAP_TWICE_DAYS_FREQUENCY == 0))
+        ) {
+            isTwiceWeeks = Boolean.TRUE;
+        }
+
+        if (isTwiceWeeks) {
+            List<AwardPeriod> awardPeriods = awardPeriodRestClient.findAllAwardPeriods();
+
+            List<Long> endingPeriodId = new ArrayList<>();
+            for (AwardPeriod awardPeriod : awardPeriods) {
+                if (now.isAfter(awardPeriod.getEndDate()
+                        .plus(Period.ofDays(awardPeriod.getGracePeriod().intValue() + 1)))) {
+                    endingPeriodId.add(awardPeriod.getAwardPeriodId());
+                }
+            }
+            if (!endingPeriodId.isEmpty()) {
+                if (logger.isInfoEnabled()) {
+                    logger.info("NotificationManagerServiceImpl.sendWinnersTwiceWeeks: ending award period found");
+                }
+                for (Long aw : endingPeriodId) {
+                    sendWinners(aw);
+                }
+
+            }
         }
 
         if (logger.isInfoEnabled()) {
