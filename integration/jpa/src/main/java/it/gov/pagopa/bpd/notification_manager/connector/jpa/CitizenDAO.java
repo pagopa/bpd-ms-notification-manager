@@ -130,6 +130,6 @@ public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long> {
             "SET notification_step_s= coalesce(notification_step_s,'') || :notStep || ',' " +
             "WHERE fiscal_code_s = :fiscalCode")
     void updateCitizenWithNotificationStep(@Param("fiscalCode") String fiscalCode,
-                                              @Param("notStep") String notStep);
+                                           @Param("notStep") String notStep);
 
 }

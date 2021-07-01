@@ -1,6 +1,5 @@
 package it.gov.pagopa.bpd.notification_manager.connector.jpa.model;
 
-import it.gov.pagopa.bpd.common.connector.jpa.model.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
