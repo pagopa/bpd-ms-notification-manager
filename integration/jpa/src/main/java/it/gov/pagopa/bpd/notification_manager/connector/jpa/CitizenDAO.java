@@ -3,6 +3,7 @@ package it.gov.pagopa.bpd.notification_manager.connector.jpa;
 
 import it.gov.pagopa.bpd.common.connector.jpa.CrudJpaDAO;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.WinningCitizen;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -28,21 +29,9 @@ public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long> {
                     " WHERE baw.award_period_id_n = :awardPeriodId" +
                     " AND baw.enabled_b = true" +
                     " AND baw.payoff_instr_s IS NOT NULL" +
-                    " AND baw.status_s <> 'SENT'" +
-                    " AND baw.status_s <> 'INTEGRATION'")
+                    " AND baw.status_s not in ('SENT', 'WIP', 'INTEGRATION')")
     int countFindWinners(@Param("awardPeriodId") Long awardPeriodId);
 
-    @Query(nativeQuery = true,
-            value = "SELECT *" +
-                    " FROM bpd_award_winner baw" +
-                    " WHERE baw.award_period_id_n = :awardPeriodId" +
-                    " AND baw.enabled_b = true" +
-                    " AND baw.payoff_instr_s IS NOT NULL" +
-                    " AND baw.status_s <> 'SENT'" +
-                    " AND baw.status_s <> 'INTEGRATION'" +
-                    " LIMIT :limit")
-    List<WinningCitizen> findWinners(@Param("awardPeriodId") Long awardPeriodId,
-                                     @Param("limit") Long limit);
 
     @Query(nativeQuery = true,
             value = "SELECT *" +
@@ -50,17 +39,62 @@ public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long> {
                     " WHERE baw.award_period_id_n = :awardPeriodId" +
                     " AND baw.enabled_b = true" +
                     " AND baw.payoff_instr_s IS NOT NULL" +
-                    " AND baw.status_s <> 'SENT'" +
-                    " AND baw.status_s <> 'INTEGRATION'" +
+                    " AND baw.status_s not in ('SENT', 'WIP', 'INTEGRATION')" +
+                    " LIMIT :limit")
+    List<WinningCitizen> findWinners(@Param("awardPeriodId") Long awardPeriodId,
+                                     @Param("limit") Long limit);
+
+
+    @Query(nativeQuery = true,
+            value = "SELECT *" +
+                    " FROM bpd_award_winner baw" +
+                    " WHERE baw.award_period_id_n = :awardPeriodId" +
+                    " AND baw.enabled_b = true" +
+                    " AND baw.payoff_instr_s IS NOT NULL" +
+                    " AND baw.status_s not in ('SENT', 'WIP', 'INTEGRATION')" +
                     " ORDER BY id_n" +
-                    " OFFSET :offset" +
-                    " LIMIT :limit")
+                    " LIMIT :limit" +
+                    " OFFSET :offset")
     List<WinningCitizen> findWinners(@Param("awardPeriodId") Long awardPeriodId,
-                                     @Param("offset") Long offset,
-                                     @Param("limit") Long limit);
+                                     @Param("limit") Long limit,
+                                     @Param("offset") Long offset);
 
-    @Query(nativeQuery=true,
-            value="SELECT *" +
+
+    @Modifying
+    @Query("update WinningCitizen wc" +
+            " set wc.status = :status," +
+            " wc.chunkFilename = :chunkFilename," +
+            " wc.updateDate = CURRENT_TIMESTAMP," +
+            " wc.updateUser = 'RESTORE_WIP_WINNERS'" +
+            " where wc.awardPeriodId = :awardPeriodId" +
+            " and wc.status = 'WIP'")
+    void restoreWinners(@Param("awardPeriodId") Long awardPeriodId,
+                        @Param("status") WinningCitizen.Status status,
+                        @Param("chunkFilename") String chunkFilename);
+
+
+    @Modifying
+    @Query("update WinningCitizen wc" +
+            " set wc.status = :status," +
+            " wc.updateDate = CURRENT_TIMESTAMP," +
+            " wc.updateUser = 'RESTORE_WIP_WINNERS'" +
+            " where wc.awardPeriodId = :awardPeriodId" +
+            " and wc.status = 'WIP'")
+    void restoreWinners(@Param("awardPeriodId") Long awardPeriodId,
+                        @Param("status") WinningCitizen.Status status);
+
+
+    @Query(nativeQuery = true,
+            value = "SELECT CASE WHEN count(baw) > 0 THEN true ELSE false END" +
+                    " FROM bpd_award_winner baw" +
+                    " WHERE baw.award_period_id_n = :awardPeriodId" +
+                    " AND baw.status_s = 'WIP'" +
+                    " LIMIT 1")
+    boolean existsWorkingWinner(@Param("awardPeriodId") Long awardPeriodId);
+
+
+    @Query(nativeQuery = true,
+            value = "SELECT *" +
                     " FROM bpd_award_winner baw" +
                     " WHERE baw.enabled_b is true" +
                     " AND (:awardPeriodId = -1 OR baw.award_period_id_n = :awardPeriodId)" +
@@ -90,4 +124,12 @@ public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long> {
 
     @Query(nativeQuery = true, value = "SELECT * from update_bonifica_recesso_citizen(:citizenRange)")
     Boolean updateBonificaRecessoMonolitica(@Param("citizenRange") String citizenRange);
+
+    @Modifying
+    @Query(nativeQuery = true, value = "UPDATE bpd_citizen " +
+            "SET notification_step_s= coalesce(notification_step_s,'') || :notStep || ',' " +
+            "WHERE fiscal_code_s = :fiscalCode")
+    void updateCitizenWithNotificationStep(@Param("fiscalCode") String fiscalCode,
+                                              @Param("notStep") String notStep);
+
 }

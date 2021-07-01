@@ -6,6 +6,7 @@ import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.Notific
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.NotificationResource;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.AwardWinnerErrorDAO;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.CitizenDAO;
+import it.gov.pagopa.bpd.notification_manager.connector.jpa.CitizenRankingDAO;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.WinningCitizen;
 import it.gov.pagopa.bpd.notification_manager.mapper.NotificationDtoMapper;
 import org.junit.Test;
@@ -47,6 +48,9 @@ public class NotificationIOServiceImplTest {
 
     @Autowired
     private NotificationIOServiceImpl notificationIOService;
+
+    @MockBean
+    private CitizenRankingDAO citizenRankingDAOMock;
 
     @PostConstruct
     public void configureMock() {
