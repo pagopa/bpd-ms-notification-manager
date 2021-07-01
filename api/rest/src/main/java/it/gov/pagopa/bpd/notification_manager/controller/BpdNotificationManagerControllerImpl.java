@@ -63,4 +63,9 @@ class BpdNotificationManagerControllerImpl extends StatelessController implement
         log.trace("Controller - execute updateBonificaRecesso");
         notificationService.updateBonificaRecesso();
     }
+
+    @Override
+    public void notifyEndPeriodOrGracePeriod() throws IOException {
+        notificationService.notifyEndPeriodOrEndGracePeriod();
+    }
 }

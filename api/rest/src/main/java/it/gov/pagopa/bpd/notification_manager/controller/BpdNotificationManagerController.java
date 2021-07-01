@@ -53,4 +53,8 @@ public interface BpdNotificationManagerController {
     @ResponseStatus(HttpStatus.OK)
     void updateBonificaRecesso() throws IOException;
 
+    @PostMapping(value = "/notifyEndPeriodOrGracePeriod", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    void notifyEndPeriodOrGracePeriod() throws IOException;
+
 }
