@@ -4,12 +4,12 @@
     <parent>
         <artifactId>bpd-ms-notification-manager-integration</artifactId>
         <groupId>it.gov.pagopa.bpd.ms.notification_manager</groupId>
-        <version>CEN-131-rc2</version>
+        <version>cen_43_cen_71-rc2</version>
     </parent>
 
     <groupId>it.gov.pagopa.bpd.ms.notification_manager.integration</groupId>
     <artifactId>bpd-ms-notification-manager-integration-sftp</artifactId>
-    <version>CEN-131-rc2</version>
+    <version>cen_43_cen_71-rc2</version>
 
 
     <dependencies>
