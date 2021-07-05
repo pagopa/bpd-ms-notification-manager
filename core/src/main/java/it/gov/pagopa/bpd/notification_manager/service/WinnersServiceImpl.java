@@ -24,10 +24,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.math.BigDecimal;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
+import java.nio.file.*;
 import java.security.NoSuchProviderException;
 import java.text.DecimalFormat;
 import java.time.LocalDate;
@@ -273,8 +270,10 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
 
             try {
                 logger.info("Creating file {}", fileName);
-                File csvOutputFile = new File(fileName);
-                PrintWriter csvPrintWriter = new PrintWriter(csvOutputFile);
+                Path csvOutputFile = Paths.get(fileName);
+                BufferedWriter bos = Files.newBufferedWriter(csvOutputFile,
+                        StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE, StandardOpenOption.APPEND);
+                PrintWriter csvPrintWriter = new PrintWriter(bos);
 
                 for (WinningCitizen winner : winners) {
                     String csvRow = generateCsvRow(winner);
@@ -282,8 +281,9 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
                 }
 
                 csvPrintWriter.close();
-                File csvChecksumOutputFile = createChecksumFile(csvOutputFile);
-                File csvPgpFile = cryptFile(csvOutputFile);
+                bos.close();
+                File csvChecksumOutputFile = createChecksumFile(csvOutputFile.toFile());
+                File csvPgpFile = cryptFile(csvOutputFile.toFile());
 
                 if (sftpEnable) {
                     sendFiles(csvPgpFile, csvChecksumOutputFile);
@@ -389,10 +389,10 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
         }
 
         String publicKeyWithLineBreaks = publicKey.replace("\\n", System.lineSeparator());
-        InputStream publicKeyIS = new ByteArrayInputStream(publicKeyWithLineBreaks.getBytes());
+        InputStream publicKeyIS = new BufferedInputStream(new ByteArrayInputStream(publicKeyWithLineBreaks.getBytes()));
         File csvPgpFile = new File(csvOutputFile.getAbsolutePath().concat(".pgp"));
 
-        try (FileOutputStream outputFOS = new FileOutputStream(csvPgpFile)) {
+        try (OutputStream outputFOS = new BufferedOutputStream(new FileOutputStream(csvPgpFile))) {
             EncryptUtil.encryptFile(outputFOS,
                     csvOutputFile.getAbsolutePath(),
                     EncryptUtil.readPublicKey(publicKeyIS),
