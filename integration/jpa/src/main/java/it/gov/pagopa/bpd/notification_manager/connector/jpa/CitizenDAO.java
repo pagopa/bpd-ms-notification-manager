@@ -29,7 +29,7 @@ public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long> {
                     " WHERE baw.award_period_id_n = :awardPeriodId" +
                     " AND baw.enabled_b = true" +
                     " AND baw.payoff_instr_s IS NOT NULL" +
-                    " AND baw.status_s not in ('SENT', 'WIP', 'INTEGRATION')")
+                    " AND baw.status_s = 'NEW'")
     int countFindWinners(@Param("awardPeriodId") Long awardPeriodId);
 
 
@@ -39,7 +39,7 @@ public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long> {
                     " WHERE baw.award_period_id_n = :awardPeriodId" +
                     " AND baw.enabled_b = true" +
                     " AND baw.payoff_instr_s IS NOT NULL" +
-                    " AND baw.status_s not in ('SENT', 'WIP', 'INTEGRATION')" +
+                    " AND baw.status_s = 'NEW'" +
                     " LIMIT :limit")
     List<WinningCitizen> findWinners(@Param("awardPeriodId") Long awardPeriodId,
                                      @Param("limit") Long limit);
@@ -51,7 +51,7 @@ public interface CitizenDAO extends CrudJpaDAO<WinningCitizen, Long> {
                     " WHERE baw.award_period_id_n = :awardPeriodId" +
                     " AND baw.enabled_b = true" +
                     " AND baw.payoff_instr_s IS NOT NULL" +
-                    " AND baw.status_s not in ('SENT', 'WIP', 'INTEGRATION')" +
+                    " AND baw.status_s = 'NEW'" +
                     " ORDER BY id_n" +
                     " LIMIT :limit" +
                     " OFFSET :offset")
