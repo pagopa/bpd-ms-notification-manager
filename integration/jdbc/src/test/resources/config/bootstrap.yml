@@ -1,0 +1,3 @@
+spring:
+  application:
+    name: "bpd-ms-notification-manager-integration-jpa"

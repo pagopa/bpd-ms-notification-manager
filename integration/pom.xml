@@ -4,15 +4,16 @@
     <parent>
         <artifactId>bpd-ms-notification-manager</artifactId>
         <groupId>it.gov.pagopa.bpd.ms</groupId>
-        <version>1.8.0</version>
+        <version>cen_43_cen_71-rc2</version>
     </parent>
     <groupId>it.gov.pagopa.bpd.ms.notification_manager</groupId>
     <artifactId>bpd-ms-notification-manager-integration</artifactId>
-    <version>1.8.0</version>
+    <version>cen_43_cen_71-rc2</version>
     <packaging>pom</packaging>
     <modules>
         <module>rest</module>
         <module>jpa</module>
         <module>sftp</module>
+        <module>jdbc</module>
     </modules>
 </project>
