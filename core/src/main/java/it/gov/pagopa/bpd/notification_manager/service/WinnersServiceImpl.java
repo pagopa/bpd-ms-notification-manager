@@ -389,10 +389,10 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
         }
 
         String publicKeyWithLineBreaks = publicKey.replace("\\n", System.lineSeparator());
-        InputStream publicKeyIS = new ByteArrayInputStream(publicKeyWithLineBreaks.getBytes());
+        InputStream publicKeyIS = new BufferedInputStream(new ByteArrayInputStream(publicKeyWithLineBreaks.getBytes()));
         File csvPgpFile = new File(csvOutputFile.getAbsolutePath().concat(".pgp"));
 
-        try (FileOutputStream outputFOS = new FileOutputStream(csvPgpFile)) {
+        try (OutputStream outputFOS = new BufferedOutputStream(new FileOutputStream(csvPgpFile))) {
             EncryptUtil.encryptFile(outputFOS,
                     csvOutputFile.getAbsolutePath(),
                     EncryptUtil.readPublicKey(publicKeyIS),
