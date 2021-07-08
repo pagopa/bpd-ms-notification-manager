@@ -32,6 +32,11 @@
                 <version>CEN-172-rc4</version>
             </dependency>
             <dependency>
+                <groupId>it.gov.pagopa.bpd.ms.notification_manager.integration</groupId>
+                <artifactId>bpd-ms-notification-manager-integration-jdbc</artifactId>
+                <version>CEN-172-rc4</version>
+            </dependency>
+            <dependency>
                 <groupId>it.gov.pagopa.bpd.ms.notification_manager</groupId>
                 <artifactId>bpd-ms-notification-manager-core</artifactId>
                 <version>CEN-172-rc4</version>

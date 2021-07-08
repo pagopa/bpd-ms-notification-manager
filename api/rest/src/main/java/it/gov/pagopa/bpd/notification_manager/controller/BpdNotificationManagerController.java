@@ -2,12 +2,14 @@ package it.gov.pagopa.bpd.notification_manager.controller;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiParam;
+import it.gov.pagopa.bpd.notification_manager.model.AwardWinnersRestoreDto;
+import it.gov.pagopa.bpd.notification_manager.model.SendWinnersDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.io.IOException;
-import java.util.List;
 
 /**
  * Controller to expose MicroService
@@ -18,17 +20,14 @@ public interface BpdNotificationManagerController {
 
     @PostMapping(value = "/winners/consap", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    void sendWinners(
-            @ApiParam(required = true)
-            @RequestParam("awardPeriodId") Long awardPeriodId
-    ) throws IOException;
+    void sendWinners(@RequestBody @Valid SendWinnersDto request);
 
     @PostMapping(value = "/winners", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
     void updateWinners(
             @ApiParam(required = true)
             @RequestParam("awardPeriodId") Long awardPeriodId
-    ) throws IOException;
+    );
 
     @GetMapping(value = "/notify", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
@@ -42,10 +41,12 @@ public interface BpdNotificationManagerController {
     @ResponseStatus(HttpStatus.OK)
     void notifyAwardWinnerPayments() throws IOException;
 
+    @Deprecated
     @GetMapping(value = "/updateRanking", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
     void updateRanking() throws IOException;
 
+    @Deprecated
     @GetMapping(value = "/updateRankingMilestone", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
     void updateRankingMilestone() throws IOException;
@@ -58,4 +59,7 @@ public interface BpdNotificationManagerController {
     @ResponseStatus(HttpStatus.OK)
     void notifyEndPeriodOrGracePeriod() throws IOException;
 
+    @PostMapping(value = "/winners/restore", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    void restoreWinners(@RequestBody @Valid AwardWinnersRestoreDto request);
 }
