@@ -50,9 +50,9 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
     private static final DecimalFormat SIX_DIGITS_FORMAT = new DecimalFormat("000000");
     private static final BigDecimal CENTS_MULTIPLICAND = BigDecimal.valueOf(100);
     private static final DateTimeFormatter ONLY_DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    static final String ERROR_MESSAGE_TEMPLATE = "updateWinnersStatus: affected %d rows of %d";
     private static final DateTimeFormatter CSV_NAME_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("ddMMyyyy.HHmmss");
     private static final String CSV_NAME_SEPARATOR = ".";
-    static final String ERROR_MESSAGE_TEMPLATE = "updateWinnersStatus: affected %d rows of %d";
 
     private final CitizenDAO citizenDAO;
     private final CitizenJdbcDAO citizenJdbcDAO;
@@ -389,10 +389,10 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
         }
 
         String publicKeyWithLineBreaks = publicKey.replace("\\n", System.lineSeparator());
-        InputStream publicKeyIS = new ByteArrayInputStream(publicKeyWithLineBreaks.getBytes());
+        InputStream publicKeyIS = new BufferedInputStream(new ByteArrayInputStream(publicKeyWithLineBreaks.getBytes()));
         File csvPgpFile = new File(csvOutputFile.getAbsolutePath().concat(".pgp"));
 
-        try (FileOutputStream outputFOS = new FileOutputStream(csvPgpFile)) {
+        try (OutputStream outputFOS = new BufferedOutputStream(new FileOutputStream(csvPgpFile))) {
             EncryptUtil.encryptFile(outputFOS,
                     csvOutputFile.getAbsolutePath(),
                     EncryptUtil.readPublicKey(publicKeyIS),
