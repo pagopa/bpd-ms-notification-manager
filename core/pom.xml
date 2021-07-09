@@ -18,15 +18,15 @@
         </dependency>
         <dependency>
             <groupId>it.gov.pagopa.bpd.ms.notification_manager.integration</groupId>
-            <artifactId>bpd-ms-notification-manager-integration-jdbc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>it.gov.pagopa.bpd.ms.notification_manager.integration</groupId>
             <artifactId>bpd-ms-notification-manager-integration-rest</artifactId>
         </dependency>
         <dependency>
             <groupId>it.gov.pagopa.bpd.ms.notification_manager.integration</groupId>
             <artifactId>bpd-ms-notification-manager-integration-sftp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>it.gov.pagopa.bpd.ms.notification_manager.integration</groupId>
+            <artifactId>bpd-ms-notification-manager-integration-jdbc</artifactId>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
