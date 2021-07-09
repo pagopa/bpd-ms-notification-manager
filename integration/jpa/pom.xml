@@ -3,13 +3,13 @@
     <parent>
         <artifactId>bpd-ms-notification-manager-integration</artifactId>
         <groupId>it.gov.pagopa.bpd.ms.notification_manager</groupId>
-        <version>cen_115_131_rc4</version>
+        <version>cen_115_131_rc5</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>it.gov.pagopa.bpd.ms.notification_manager.integration</groupId>
     <artifactId>bpd-ms-notification-manager-integration-jpa</artifactId>
-    <version>cen_115_131_rc4</version>
+    <version>cen_115_131_rc5</version>
     <dependencies>
         <dependency>
             <groupId>org.postgresql</groupId>
