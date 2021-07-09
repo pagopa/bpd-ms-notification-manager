@@ -1,7 +1,6 @@
 package it.gov.pagopa.bpd.notification_manager.service;
 
 import it.gov.pagopa.bpd.notification_manager.connector.award_period.AwardPeriodRestClient;
-import it.gov.pagopa.bpd.notification_manager.connector.award_period.model.AwardPeriod;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.NotificationRestConnector;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.NotificationDTO;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.NotificationResource;
@@ -24,8 +23,6 @@ import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -71,20 +68,13 @@ public class NotificationServiceImplTest {
                 .notify(Mockito.any(NotificationDTO.class));
     }
 
+
     @Test
     public void testUpdateRanking() {
-
         notificationService.updateRanking();
         verify(citizenDAOMock, times(1)).updateRanking();
     }
 
-    @Test
-    public void testUpdateWinners() {
-
-        notificationService.updateWinners(Mockito.anyLong());
-        verify(citizenDAOMock, only()).updateWinners(Mockito.anyLong());
-        verify(citizenDAOMock, times(1)).updateWinners(Mockito.anyLong());
-    }
 
     @PostConstruct
     public void configureMock() {
@@ -103,10 +93,7 @@ public class NotificationServiceImplTest {
                     return result;
                 });
 
-        BDDMockito.when(winnersService.sendWinners(Mockito.any(Long.class), Mockito.anyInt(), Mockito.any(), Mockito.any(LocalDateTime.class), Mockito.anyInt()))
-                .thenAnswer(invocation -> 0);
-
-        BDDMockito.when(citizenDAOMock.findWinnersToNotify(Mockito.anyLong(),Mockito.anyLong(),Mockito.anyList(),Mockito.anyLong(),Mockito.anyLong()))
+        BDDMockito.when(citizenDAOMock.findWinnersToNotify(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyList(), Mockito.anyLong(), Mockito.anyLong()))
                 .thenAnswer(invocation -> {
                     List<WinningCitizen> result = new ArrayList<>();
                     WinningCitizen citizen = new WinningCitizen();
@@ -123,63 +110,9 @@ public class NotificationServiceImplTest {
                 });
     }
 
-    @Test
-    public void testSendWinnersEndingPeriod() throws IOException {
-
-        BDDMockito.when(awardPeriodRestClientMock.findAllAwardPeriods())
-                .thenAnswer(invocation -> {
-                    List<AwardPeriod> result = new ArrayList<>();
-                    AwardPeriod awp1 = new AwardPeriod();
-                    awp1.setAwardPeriodId(2L);
-                    awp1.setEndDate(LocalDate.now().minus(Period.ofDays(15)));
-                    awp1.setGracePeriod(14L);
-                    awp1.setStartDate(LocalDate.now().minus(Period.ofDays(50)));
-                    result.add(awp1);
-                    AwardPeriod awp2 = new AwardPeriod();
-                    awp2.setAwardPeriodId(1L);
-                    awp2.setEndDate(LocalDate.now().minus(Period.ofDays(5)));
-                    awp2.setGracePeriod(15L);
-                    awp2.setStartDate(LocalDate.now().minus(Period.ofDays(40)));
-                    result.add(awp2);
-                    return result;
-                });
-
-        notificationService.updateAndSendWinners();
-
-        verify(winnersService, atLeastOnce()).sendWinners(Mockito.any(Long.class), Mockito.anyInt(), Mockito.any(), Mockito.any(LocalDateTime.class), Mockito.anyInt());
-        verify(awardPeriodRestClientMock, only()).findAllAwardPeriods();
-
-    }
 
     @Test
-    public void testSendWinners() throws IOException {
-
-        BDDMockito.when(awardPeriodRestClientMock.findAllAwardPeriods())
-                .thenAnswer(invocation -> {
-                    List<AwardPeriod> result = new ArrayList<>();
-                    AwardPeriod awp1 = new AwardPeriod();
-                    awp1.setAwardPeriodId(2L);
-                    awp1.setEndDate(LocalDate.now());
-                    awp1.setGracePeriod(15L);
-                    awp1.setStartDate(LocalDate.now().minus(Period.ofDays(50)));
-                    result.add(awp1);
-                    AwardPeriod awp2 = new AwardPeriod();
-                    awp2.setAwardPeriodId(1L);
-                    awp2.setEndDate(LocalDate.now().minus(Period.ofDays(5)));
-                    awp2.setGracePeriod(15L);
-                    awp2.setStartDate(LocalDate.now().minus(Period.ofDays(40)));
-                    result.add(awp2);
-                    return result;
-                });
-
-        notificationService.updateAndSendWinners();
-
-        verifyZeroInteractions(winnersService);
-        verify(awardPeriodRestClientMock, only()).findAllAwardPeriods();
-    }
-
-    @Test
-    public void testNotifyWinners() throws IOException{
+    public void testNotifyWinners() throws IOException {
         notificationService.notifyWinnersPayments();
 
         verifyZeroInteractions(winnersService);

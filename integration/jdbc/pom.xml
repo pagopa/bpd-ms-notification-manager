@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>bpd-ms-notification-manager-integration</artifactId>
         <groupId>it.gov.pagopa.bpd.ms.notification_manager</groupId>
@@ -8,7 +9,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>it.gov.pagopa.bpd.ms.notification_manager.integration</groupId>
-    <artifactId>bpd-ms-notification-manager-integration-jpa</artifactId>
+    <artifactId>bpd-ms-notification-manager-integration-jdbc</artifactId>
     <version>CEN-172-rc6</version>
     <dependencies>
         <dependency>
@@ -17,14 +18,16 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>it.gov.pagopa.bpd.commons.integration</groupId>
-            <artifactId>bpd-commons-integration-jpa</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jdbc</artifactId>
         </dependency>
         <dependency>
-            <groupId>it.gov.pagopa.bpd.commons.integration</groupId>
-            <artifactId>bpd-commons-integration-jpa</artifactId>
-            <type>test-jar</type>
-            <scope>test</scope>
+            <groupId>javax.persistence</groupId>
+            <artifactId>javax.persistence-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-jpa</artifactId>
         </dependency>
     </dependencies>
 

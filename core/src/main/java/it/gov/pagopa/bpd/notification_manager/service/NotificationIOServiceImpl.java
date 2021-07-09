@@ -68,16 +68,16 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
 
     private static final Map<Long,String> phases=new HashMap();
     static{
-        phases.put(1L,"prima");
-        phases.put(2L,"seconda");
-        phases.put(3L,"terza");
-        phases.put(4L,"quarta");
-        phases.put(5L,"quinta");
-        phases.put(6L,"sesta");
-        phases.put(7L,"settima");
-        phases.put(8L,"ottava");
-        phases.put(9L,"nona");
-        phases.put(10L,"decima");
+        phases.put(1L, "primo");
+        phases.put(2L, "secondo");
+        phases.put(3L, "terzo");
+        phases.put(4L, "quarto");
+        phases.put(5L, "quinto");
+        phases.put(6L, "sesto");
+        phases.put(7L, "settimo");
+        phases.put(8L, "ottavo");
+        phases.put(9L, "nono");
+        phases.put(10L, "decimo");
     }
     private static final Map<Long,String> awPeriods=new HashMap();
     static{
