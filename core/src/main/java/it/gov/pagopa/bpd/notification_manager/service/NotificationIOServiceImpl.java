@@ -321,11 +321,10 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
             } else {
                 step = "END_GRACE_PERIOD_" + awardPeriod.getAwardPeriodId().toString();
             }
-            log.info("RECORD PER LA QUERY awPerId: " + awardPeriod.getAwardPeriodId() + " step: " + step + "aw_end_date: " + awardPeriod.getEndDate());
+
             citizenToNotify = citizenRankingDAO
                     .extractRankingByAwardPeriodOrderByTransactionFiscalCode(
                             awardPeriod.getAwardPeriodId(), step, notifyEndPeriodLimit, awardPeriod.getEndDate());
-            log.info("RECORD ESTRATTISUL PERIODO 2: " + citizenToNotify.size());
 
             for (CitizenRanking citRanking : citizenToNotify) {
                 Boolean updateCit = Boolean.TRUE;
