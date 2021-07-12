@@ -43,13 +43,10 @@ import static org.mockito.Mockito.*;
 @ContextConfiguration(classes = {WinnersServiceImpl.class})
 public class WinnersServiceImplTest {
 
-    private enum Error {
-        UPDATE_WINNER_STATUS
-    }
-
-    private enum MissRecord {
-        UPDATE_WINNER_STATUS
-    }
+    @MockBean
+    private AwardPeriodRestClient awardPeriodRestClientMock;
+    @MockBean
+    private CitizenJdbcDAO citizenJdbcDAOMock;
 
     static {
         try {
@@ -66,21 +63,10 @@ public class WinnersServiceImplTest {
     private AwardWinnerErrorDAO awardWinnerErrorDAO;
     @MockBean
     private WinnersSftpConnector winnersSftpConnectorMock;
-    @MockBean
-    private AwardPeriodRestClient awardPeriodRestClientMock;
-    @MockBean
-    private CitizenJdbcDAO citizenJdbcDAOMock;
-    @Autowired
-    private WinnersServiceImpl winnersService;
-
     private Error error;
     private MissRecord missRecords;
-
-    static String readFile(String path, Charset encoding)
-            throws IOException {
-        byte[] encoded = Files.readAllBytes(Paths.get(path));
-        return new String(encoded, encoding);
-    }
+    @Autowired
+    private WinnersServiceImpl winnersService;
 
     @PostConstruct
     public void configureMock() {
@@ -142,13 +128,17 @@ public class WinnersServiceImplTest {
                 });
     }
 
-
     @Before
     public void init() {
         error = null;
         missRecords = null;
     }
 
+    static String readFile(String path, Charset encoding)
+            throws IOException {
+        byte[] encoded = Files.readAllBytes(Paths.get(path));
+        return new String(encoded, encoding);
+    }
 
     @Test
     public void testSendWinnersWithResults() {
@@ -158,14 +148,12 @@ public class WinnersServiceImplTest {
         verify(winnersSftpConnectorMock, atLeastOnce()).sendFile(Mockito.any(File.class));
     }
 
-
     @Test
     public void testSendWinnersWithoutResults() {
         winnersService.sendWinners(-1L, null);
 
         verifyZeroInteractions(winnersSftpConnectorMock);
     }
-
 
     @Test(expected = UpdateWinnerStatusException.class)
     public void testSendWinnersWithUpdateStatusError() {
@@ -182,7 +170,6 @@ public class WinnersServiceImplTest {
         }
     }
 
-
     @Test(expected = UpdateWinnerStatusException.class)
     public void testSendWinnersWithUpdateStatusMissedRecords() {
         missRecords = MissRecord.UPDATE_WINNER_STATUS;
@@ -198,14 +185,12 @@ public class WinnersServiceImplTest {
         }
     }
 
-
     @Test
     public void testUpdateWinners() {
         winnersService.updateWinners(Mockito.anyLong());
         verify(citizenDAOMock, only()).updateWinners(Mockito.anyLong());
         verify(citizenDAOMock, times(1)).updateWinners(Mockito.anyLong());
     }
-
 
     @Test
     public void testSendWinnersEndingPeriod() throws IOException {
@@ -233,7 +218,6 @@ public class WinnersServiceImplTest {
         verify(awardPeriodRestClientMock, only()).findAllAwardPeriods();
     }
 
-
     @Test
     public void testSendWinners() throws IOException {
         BDDMockito.when(awardPeriodRestClientMock.findAllAwardPeriods())
@@ -258,6 +242,16 @@ public class WinnersServiceImplTest {
 
 //        verifyZeroInteractions(winnersService);
         verify(awardPeriodRestClientMock, only()).findAllAwardPeriods();
+    }
+
+
+    private enum Error {
+        UPDATE_WINNER_STATUS
+    }
+
+
+    private enum MissRecord {
+        UPDATE_WINNER_STATUS
     }
 
 }
