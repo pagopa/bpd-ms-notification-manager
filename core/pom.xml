@@ -4,12 +4,12 @@
     <parent>
         <artifactId>bpd-ms-notification-manager</artifactId>
         <groupId>it.gov.pagopa.bpd.ms</groupId>
-        <version>cen_115_131_rc5</version>
+        <version>cen_115_131_rc7</version>
     </parent>
 
     <groupId>it.gov.pagopa.bpd.ms.notification_manager</groupId>
     <artifactId>bpd-ms-notification-manager-core</artifactId>
-    <version>cen_115_131_rc5</version>
+    <version>cen_115_131_rc7</version>
 
     <dependencies>
         <dependency>
