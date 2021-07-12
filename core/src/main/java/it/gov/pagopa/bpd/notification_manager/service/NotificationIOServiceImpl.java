@@ -325,6 +325,7 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
             citizenToNotify = citizenRankingDAO
                     .extractRankingByAwardPeriodOrderByTransactionFiscalCode(
                             awardPeriod.getAwardPeriodId(), step, notifyEndPeriodLimit, awardPeriod.getEndDate());
+            log.info("RECORD ESTRATTISUL PERIODO 2: " + citizenToNotify.size());
 
             for (CitizenRanking citRanking : citizenToNotify) {
                 Boolean updateCit = Boolean.TRUE;
@@ -356,6 +357,7 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
                             .replace("{{amount}}", citRanking.getTotalCashback() != null ? citRanking.getTotalCashback().setScale(2, ROUND_HALF_DOWN).toString().replace(".", ",") : MARKDOWN_NA)
                             .replace("\\n", System.lineSeparator());
 
+                    log.info("RECORD IN NOTIFICA: " + citRanking.getFiscalCode());
                     sendNotifyIO(citRanking.getFiscalCode(), notifySubject, notifyMarkdown);
                 } catch (Exception ex) {
                     if (log.isErrorEnabled()) {
