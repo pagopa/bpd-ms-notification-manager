@@ -321,7 +321,7 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
             } else {
                 step = "END_GRACE_PERIOD_" + awardPeriod.getAwardPeriodId().toString();
             }
-
+            log.info("RECORD PER LA QUERY awPerId: " + awardPeriod.getAwardPeriodId() + " step: " + step + "aw_end_date: " + awardPeriod.getEndDate());
             citizenToNotify = citizenRankingDAO
                     .extractRankingByAwardPeriodOrderByTransactionFiscalCode(
                             awardPeriod.getAwardPeriodId(), step, notifyEndPeriodLimit, awardPeriod.getEndDate());
@@ -357,7 +357,6 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
                             .replace("{{amount}}", citRanking.getTotalCashback() != null ? citRanking.getTotalCashback().setScale(2, ROUND_HALF_DOWN).toString().replace(".", ",") : MARKDOWN_NA)
                             .replace("\\n", System.lineSeparator());
 
-                    log.info("RECORD IN NOTIFICA: " + citRanking.getFiscalCode());
                     sendNotifyIO(citRanking.getFiscalCode(), notifySubject, notifyMarkdown);
                 } catch (Exception ex) {
                     if (log.isErrorEnabled()) {
