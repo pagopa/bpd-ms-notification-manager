@@ -331,7 +331,7 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
 
                 if (!isEndPeriod) {
                     if (citRanking.getRanking() != null
-                            && awardPeriod.getMinTransactionNumber().compareTo(citRanking.getTransactionNumber()) > -1) {
+                            && citRanking.getTransactionNumber().compareTo(awardPeriod.getMinTransactionNumber()) > -1) {
                         notifySubject = subjectEndGracePeriodOK;
 
                         if (awardPeriod.getMinPosition().compareTo(citRanking.getRanking()) > -1) {
