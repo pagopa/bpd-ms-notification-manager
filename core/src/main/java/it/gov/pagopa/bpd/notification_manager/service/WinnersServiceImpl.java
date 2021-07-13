@@ -50,9 +50,9 @@ class WinnersServiceImpl extends BaseService implements WinnersService {
     private static final DecimalFormat SIX_DIGITS_FORMAT = new DecimalFormat("000000");
     private static final BigDecimal CENTS_MULTIPLICAND = BigDecimal.valueOf(100);
     private static final DateTimeFormatter ONLY_DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    static final String ERROR_MESSAGE_TEMPLATE = "updateWinnersStatus: affected %d rows of %d";
     private static final DateTimeFormatter CSV_NAME_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("ddMMyyyy.HHmmss");
     private static final String CSV_NAME_SEPARATOR = ".";
-    static final String ERROR_MESSAGE_TEMPLATE = "updateWinnersStatus: affected %d rows of %d";
 
     private final CitizenDAO citizenDAO;
     private final CitizenJdbcDAO citizenJdbcDAO;

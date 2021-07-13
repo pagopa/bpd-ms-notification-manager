@@ -54,8 +54,36 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
     private static final String ORDINE_OK = "ORDINE ESEGUITO";
     private final List<String> notifyResultList;
 
-    private final CitizenRankingDAO citizenRankingDAO;
+    private static final Map<Long, String> phases = new HashMap();
+    private static final Map<Long, String> awPeriods = new HashMap();
 
+    static {
+        phases.put(1L, "primo");
+        phases.put(2L, "secondo");
+        phases.put(3L, "terzo");
+        phases.put(4L, "quarto");
+        phases.put(5L, "quinto");
+        phases.put(6L, "sesto");
+        phases.put(7L, "settimo");
+        phases.put(8L, "ottavo");
+        phases.put(9L, "nono");
+        phases.put(10L, "decimo");
+    }
+
+    static {
+        awPeriods.put(1L, "primo");
+        awPeriods.put(2L, "secondo");
+        awPeriods.put(3L, "terzo");
+        awPeriods.put(4L, "quarto");
+        awPeriods.put(5L, "quinto");
+        awPeriods.put(6L, "sesto");
+        awPeriods.put(7L, "settimo");
+        awPeriods.put(8L, "ottavo");
+        awPeriods.put(9L, "nono");
+        awPeriods.put(10L, "decimo");
+    }
+
+    private final CitizenRankingDAO citizenRankingDAO;
     private final Long notifyEndPeriodLimit;
     private final Long notifyEndPeriodOffset;
     private final String subjectEndPeriod;
@@ -65,33 +93,6 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
     private final String markdownEndGracePeriodOKSuperCash;
     private final String subjectEndGracePeriodKO;
     private final String markdownEndGracePeriodKO;
-
-    private static final Map<Long,String> phases=new HashMap();
-    static{
-        phases.put(1L,"prima");
-        phases.put(2L,"seconda");
-        phases.put(3L,"terza");
-        phases.put(4L,"quarta");
-        phases.put(5L,"quinta");
-        phases.put(6L,"sesta");
-        phases.put(7L,"settima");
-        phases.put(8L,"ottava");
-        phases.put(9L,"nona");
-        phases.put(10L,"decima");
-    }
-    private static final Map<Long,String> awPeriods=new HashMap();
-    static{
-        awPeriods.put(1L,"primo");
-        awPeriods.put(2L,"secondo");
-        awPeriods.put(3L,"terzo");
-        awPeriods.put(4L,"quarto");
-        awPeriods.put(5L,"quinto");
-        awPeriods.put(6L,"sesto");
-        awPeriods.put(7L,"settimo");
-        awPeriods.put(8L,"ottavo");
-        awPeriods.put(9L,"nono");
-        awPeriods.put(10L,"decimo");
-    }
 
     @Autowired
     NotificationIOServiceImpl(
@@ -166,7 +167,7 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
                 String notifyMarkdown = getNotifyMarkdown(toNotifyWin);
                 String notifySubject = getNotifySubject(toNotifyWin);
 
-                NotificationResource resource = this.sendNotifyIO(toNotifyWin.getFiscalCode(),notifySubject,notifyMarkdown);
+                NotificationResource resource = this.sendNotifyIO(toNotifyWin.getFiscalCode(), notifySubject, notifyMarkdown);
                 toNotifyWin.setNotifyTimes(Long.sum(toNotifyWin.getNotifyTimes() != null ?
                         toNotifyWin.getNotifyTimes() : 0L, 1L));
                 toNotifyWin.setNotifyId(resource.getId());
@@ -295,7 +296,7 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
         return winnerError;
     }
 
-    private NotificationResource sendNotifyIO(String fiscalCode, String notifySubject, String notifyMarkdown){
+    private NotificationResource sendNotifyIO(String fiscalCode, String notifySubject, String notifyMarkdown) {
         NotificationDTO dto = notificationDtoMapper.NotificationDtoMapper(
                 fiscalCode, timeToLive, notifySubject, notifyMarkdown);
         return notificationRestConnector.notify(dto);
@@ -315,64 +316,64 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
         List<CitizenRanking> citizenToNotify = null;
 
         do {
-            if(isEndPeriod){
-                step="END_PERIOD_"+awardPeriod.getAwardPeriodId().toString();
-            }else{
-                step="END_GRACE_PERIOD_"+awardPeriod.getAwardPeriodId().toString();
+            if (isEndPeriod) {
+                step = "END_PERIOD_" + awardPeriod.getAwardPeriodId().toString();
+            } else {
+                step = "END_GRACE_PERIOD_" + awardPeriod.getAwardPeriodId().toString();
             }
 
             citizenToNotify = citizenRankingDAO
                     .extractRankingByAwardPeriodOrderByTransactionFiscalCode(
                             awardPeriod.getAwardPeriodId(), step, notifyEndPeriodLimit, awardPeriod.getEndDate());
 
-            for(CitizenRanking citRanking : citizenToNotify){
+            for (CitizenRanking citRanking : citizenToNotify) {
                 Boolean updateCit = Boolean.TRUE;
 
-                if(!isEndPeriod){
-                    if(citRanking.getRanking()!=null
-                            && awardPeriod.getMinTransactionNumber().compareTo(citRanking.getTransactionNumber())>-1){
+                if (!isEndPeriod) {
+                    if (citRanking.getRanking() != null
+                            && citRanking.getTransactionNumber().compareTo(awardPeriod.getMinTransactionNumber()) > -1) {
                         notifySubject = subjectEndGracePeriodOK;
 
-                        if(awardPeriod.getMinPosition().compareTo(citRanking.getRanking())>-1){
+                        if (awardPeriod.getMinPosition().compareTo(citRanking.getRanking()) > -1) {
                             notifyMarkdown = markdownEndGracePeriodOKSuperCash;
-                        }else{
+                        } else {
                             notifyMarkdown = markdownEndGracePeriodOK;
                         }
-                    }else{
+                    } else {
                         notifySubject = subjectEndGracePeriodKO;
                         notifyMarkdown = markdownEndGracePeriodKO;
                     }
-                    step="END_GRACE_PERIOD_"+awardPeriod.getAwardPeriodId().toString();
-                }else{
-                    step="END_PERIOD_"+awardPeriod.getAwardPeriodId().toString();
+                    step = "END_GRACE_PERIOD_" + awardPeriod.getAwardPeriodId().toString();
+                } else {
+                    step = "END_PERIOD_" + awardPeriod.getAwardPeriodId().toString();
                 }
 
-                try{
-                    notifySubject=notifySubject.replace("{{award_period}}",awPeriods.get(awardPeriod.getAwardPeriodId()));
-                    notifyMarkdown=notifyMarkdown
-                            .replace("{{phase}}",phases.get(awardPeriod.getAwardPeriodId()))
-                            .replace("{{maxTransaction}}",awardPeriod.getMaxTransactionCashback().toString())
-                            .replace("{{amount}}",citRanking.getTotalCashback() != null ? citRanking.getTotalCashback().setScale(2, ROUND_HALF_DOWN).toString().replace(".", ","):MARKDOWN_NA)
+                try {
+                    notifySubject = notifySubject.replace("{{award_period}}", awPeriods.get(awardPeriod.getAwardPeriodId()));
+                    notifyMarkdown = notifyMarkdown
+                            .replace("{{phase}}", phases.get(awardPeriod.getAwardPeriodId()))
+                            .replace("{{maxTransaction}}", awardPeriod.getMaxTransactionCashback().toString())
+                            .replace("{{amount}}", citRanking.getTotalCashback() != null ? citRanking.getTotalCashback().setScale(2, ROUND_HALF_DOWN).toString().replace(".", ",") : MARKDOWN_NA)
                             .replace("\\n", System.lineSeparator());
 
                     sendNotifyIO(citRanking.getFiscalCode(), notifySubject, notifyMarkdown);
-                }catch(Exception ex){
-                    if(log.isErrorEnabled()){
+                } catch (Exception ex) {
+                    if (log.isErrorEnabled()) {
                         log.error("Unable to send notify to citizen");
                     }
-                    step = step+"_ERROR";
+                    step = step + "_ERROR";
                     errorNot++;
                 }
 
                 citizenDAO.updateCitizenWithNotificationStep(citRanking.getFiscalCode(), step);
             }
 
-            if(logger.isInfoEnabled()){
+            if (logger.isInfoEnabled()) {
                 logger.info("NotificationIOServiceImpl.notifyEndPeriodOrEndGracePeriod - Sended notifies to " + citizenToNotify.size() + " citizens with " + errorNot + " errors");
             }
 
             errorNot = 0;
 
-        } while(citizenToNotify!=null && !citizenToNotify.isEmpty());
+        } while (citizenToNotify != null && !citizenToNotify.isEmpty());
     }
 }

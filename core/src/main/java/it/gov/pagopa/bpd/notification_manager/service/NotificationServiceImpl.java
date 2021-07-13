@@ -208,32 +208,36 @@ class NotificationServiceImpl extends BaseService implements NotificationService
         Boolean isEndPeriod = Boolean.FALSE;
         LocalDate yesterday = LocalDate.now().minus(Period.ofDays(1));
 
-        if(awardPeriods.stream().anyMatch(period ->
+        if (awardPeriods.stream().anyMatch(period ->
                 yesterday.isEqual(period.getEndDate())
-                    || (yesterday.isAfter(period.getEndDate())
-                            && yesterday.isBefore(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())))))
-            || awardPeriods.stream().anyMatch(period ->
-                yesterday.isEqual(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue()))) )
-        ){
-
-            if(awardPeriods.stream().anyMatch(period ->
-                yesterday.isEqual(period.getEndDate())
-                    || (yesterday.isAfter(period.getEndDate())
+                        || (yesterday.isAfter(period.getEndDate())
                         && yesterday.isBefore(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())))))
-            ){
+                || awardPeriods.stream().anyMatch(period ->
+                yesterday.isEqual(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())))
+                        || (yesterday.isAfter(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue()))))
+                        && yesterday.isBefore(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())).plus(Period.ofDays(10))))
+        ) {
+
+            if (awardPeriods.stream().anyMatch(period ->
+                    yesterday.isEqual(period.getEndDate())
+                            || (yesterday.isAfter(period.getEndDate())
+                            && yesterday.isBefore(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())))))
+            ) {
                 isEndPeriod = Boolean.TRUE;
                 awardPeriod = awardPeriods.stream().filter(period ->
-                                yesterday.isEqual(period.getEndDate())
+                        yesterday.isEqual(period.getEndDate())
                                 || (yesterday.isAfter(period.getEndDate())
-                                    && yesterday.isBefore(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())))
+                                && yesterday.isBefore(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())))
                         )).findAny().get();
-            }else{
+            } else {
                 awardPeriod = awardPeriods.stream().filter(period ->
-                                yesterday.isEqual(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())))
-                        ).findAny().get();
+                        yesterday.isEqual(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())))
+                                || (yesterday.isAfter(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue()))))
+                                && yesterday.isBefore(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())).plus(Period.ofDays(10)))
+                ).findAny().get();
             }
 
-            if(awardPeriod != null){
+            if (awardPeriod != null) {
                 notificationIOService.notifyEndPeriodOrEndGracePeriod(awardPeriod, isEndPeriod);
             }
         }

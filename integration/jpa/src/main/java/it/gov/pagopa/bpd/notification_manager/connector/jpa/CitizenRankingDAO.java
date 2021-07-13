@@ -3,7 +3,6 @@ package it.gov.pagopa.bpd.notification_manager.connector.jpa;
 import it.gov.pagopa.bpd.common.connector.jpa.CrudJpaDAO;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.CitizenRanking;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.CitizenRankingId;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;

@@ -1,6 +1,5 @@
 package it.gov.pagopa.bpd.notification_manager.service;
 
-import it.gov.pagopa.bpd.notification_manager.connector.award_period.AwardPeriodRestClient;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.NotificationRestConnector;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.NotificationDTO;
 import it.gov.pagopa.bpd.notification_manager.connector.io_backend.model.NotificationResource;
@@ -27,7 +26,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @RunWith(SpringRunner.class)
 @TestPropertySource(locations = "classpath:config/notificationService.properties")
