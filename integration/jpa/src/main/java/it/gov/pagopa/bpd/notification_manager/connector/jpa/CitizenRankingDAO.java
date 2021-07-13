@@ -32,7 +32,7 @@ public interface CitizenRankingDAO extends CrudJpaDAO<CitizenRanking, CitizenRan
             "AND bcr.award_period_id_n = bre.award_period_id_n " +
             "WHERE bc.enabled_b IS TRUE " +
             "AND (bc.notification_step_s IS null OR bc.notification_step_s NOT LIKE '%' || :step || '%') " +
-            "AND bre.award_period_id_n = :awardPeriodId " +
+            "AND bcr.award_period_id_n = :awardPeriodId " +
             "AND bc.timestamp_tc_t < :endPeriodDate " +
             "ORDER BY bcr.transaction_n DESC, bcr.fiscal_code_c " +
             "LIMIT :limit")
