@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bpdmsnotificationmanager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bpdmsnotificationmanager
+  template:
+    metadata:
+      labels:
+        app: bpdmsnotificationmanager
+    spec:
+      containers:
+        - name: bpdmsnotificationmanager
+          image: cstarpacr.azurecr.io/bpdmsnotificationmanager
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - secretRef:
+                name: bpdmsnotificationmanager
+            - secretRef:
+                name: application-insights
+            - secretRef:
+                name: postgres-credentials
+            - configMapRef:
+                name: eventhub-logging
+            - configMapRef:
+                name: rest-client
+            - configMapRef:
+                name: bpdmsnotificationmanager
+            - configMapRef:
+                name: jvm
+          resources:
+            limits:
+              cpu: 800m
+              memory: 6Gi
+            requests:
+              cpu: 50m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+              scheme: HTTP
+            timeoutSeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+              scheme: HTTP
+            timeoutSeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 30
+            timeoutSeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 30
+          imagePullPolicy: Always
