@@ -18,48 +18,48 @@ import java.io.IOException;
 @RequestMapping("/bpd/notification-manager")
 public interface BpdNotificationManagerController {
 
-    @PostMapping(value = "/winners/consap", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @PostMapping(value = "/winners/consap", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     void sendWinners(@RequestBody @Valid SendWinnersDto request);
 
-    @PostMapping(value = "/winners", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @PostMapping(value = "/winners", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     void updateWinners(
             @ApiParam(required = true)
             @RequestParam("awardPeriodId") Long awardPeriodId
     );
 
-    @GetMapping(value = "/notify", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @GetMapping(value = "/notify", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     void notifyUnset();
 
-    @PostMapping(value = "/test", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @PostMapping(value = "/test", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     void testConnection() throws IOException;
 
-    @PostMapping(value = "/notifyPayments", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @PostMapping(value = "/notifyPayments", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     void notifyAwardWinnerPayments() throws IOException;
 
     @Deprecated
-    @GetMapping(value = "/updateRanking", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @GetMapping(value = "/updateRanking", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     void updateRanking() throws IOException;
 
     @Deprecated
-    @GetMapping(value = "/updateRankingMilestone", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @GetMapping(value = "/updateRankingMilestone", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     void updateRankingMilestone() throws IOException;
 
-    @GetMapping(value = "/updateBonificaRecesso", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @GetMapping(value = "/updateBonificaRecesso", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     void updateBonificaRecesso() throws IOException;
 
-    @PostMapping(value = "/notifyEndPeriodOrGracePeriod", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @PostMapping(value = "/notifyEndPeriodOrGracePeriod", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     void notifyEndPeriodOrGracePeriod() throws IOException;
 
-    @PostMapping(value = "/winners/restore", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @PostMapping(value = "/winners/restore", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     void restoreWinners(@RequestBody @Valid AwardWinnersRestoreDto request);
 }

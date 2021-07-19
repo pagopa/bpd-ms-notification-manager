@@ -16,12 +16,12 @@ import javax.validation.Valid;
 @FeignClient(name = "${rest-client.notification.serviceCode}", url = "${rest-client.notification.base-url}")
 public interface NotificationRestClient {
 
-    @PostMapping(value = "${rest-client.notification.backend-io.notify.url}", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @PostMapping(value = "${rest-client.notification.backend-io.notify.url}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     NotificationResource notify(@RequestBody @Valid NotificationDTO notificationDTO,
                                 @RequestHeader("Ocp-Apim-Subscription-Key") String token);
 
-    @PostMapping(value = "${rest-client.notification.backend-io.profile.url}", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @PostMapping(value = "${rest-client.notification.backend-io.profile.url}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     ProfileResource profile(@RequestBody @Valid ProfileDTO notificationDTO,
                             @RequestHeader("Ocp-Apim-Subscription-Key") String token);

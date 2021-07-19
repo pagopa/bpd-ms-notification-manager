@@ -9,6 +9,7 @@ import it.gov.pagopa.bpd.notification_manager.connector.jpa.AwardWinnerErrorDAO;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.CitizenDAO;
 import it.gov.pagopa.bpd.notification_manager.connector.jpa.model.WinningCitizen;
 import it.gov.pagopa.bpd.notification_manager.exception.UpdateWinnerStatusException;
+import lombok.SneakyThrows;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -16,31 +17,29 @@ import org.mockito.BDDMockito;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.support.TestPropertySourceUtils;
 
 import javax.annotation.PostConstruct;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.math.BigDecimal;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.Period;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.mockito.Mockito.*;
 
 @RunWith(SpringRunner.class)
 @TestPropertySource(locations = "classpath:config/notificationService.properties",
         properties = {"core.NotificationService.findWinners.maxRow=5", "core.NotificationService.findWinners.deleteTmpFiles.enable=true"})
-@ContextConfiguration(classes = {WinnersServiceImpl.class})
+@ContextConfiguration(initializers = WinnersServiceImplTest.RandomPortInitializer.class,
+        classes = {WinnersServiceImpl.class})
 public class WinnersServiceImplTest {
 
     @MockBean
@@ -48,12 +47,20 @@ public class WinnersServiceImplTest {
     @MockBean
     private CitizenJdbcDAO citizenJdbcDAOMock;
 
-    static {
-        try {
-            String publicKey = readFile("src/test/resources/test_pgp/test", StandardCharsets.US_ASCII);
-            System.setProperty("NOTIFICATION_SERVICE_NOTIFY_WINNERS_PUBLIC_KEY", publicKey);
-        } catch (IOException e) {
-            e.printStackTrace();
+    public static class RandomPortInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+        @SneakyThrows
+        @Override
+        public void initialize(ConfigurableApplicationContext applicationContext) {
+            InputStream inputStream = WinnersServiceImplTest.class.getClassLoader().getResourceAsStream("test_pgp/test");
+            String publicKey = new BufferedReader(
+                    new InputStreamReader(Objects.requireNonNull(inputStream), StandardCharsets.UTF_8))
+                    .lines()
+                    .collect(Collectors.joining("\n"));
+            TestPropertySourceUtils
+                    .addInlinedPropertiesToEnvironment(applicationContext,
+                            String.format("NOTIFICATION_SERVICE_NOTIFY_WINNERS_PUBLIC_KEY=%s",
+                                    publicKey)
+                    );
         }
     }
 
@@ -134,11 +141,6 @@ public class WinnersServiceImplTest {
         missRecords = null;
     }
 
-    static String readFile(String path, Charset encoding)
-            throws IOException {
-        byte[] encoded = Files.readAllBytes(Paths.get(path));
-        return new String(encoded, encoding);
-    }
 
     @Test
     public void testSendWinnersWithResults() {
