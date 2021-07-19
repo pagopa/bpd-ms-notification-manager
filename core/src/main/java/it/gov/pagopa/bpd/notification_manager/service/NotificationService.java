@@ -10,19 +10,18 @@ public interface NotificationService {
 
     void notifyUnsetPayoffInstr();
 
+    @Deprecated
     void updateRanking() throws IOException;
 
+    @Deprecated
     void updateRankingMilestone() throws IOException;
-
-    void updateWinners(Long awardPeriodId) throws IOException;
-
-    void sendWinners(Long awardPeriodId) throws IOException;
-
-    void updateAndSendWinners() throws IOException;
 
     void testConnection() throws IOException;
 
     void notifyWinnersPayments() throws IOException;
 
     void updateBonificaRecesso() throws IOException;
+
+    void notifyEndPeriodOrEndGracePeriod() throws IOException;
+
 }
