@@ -9,7 +9,7 @@
 
         <groupId>it.gov.pagopa.bpd.ms</groupId>
 
-        <version>cen-383-rc2</version>
+        <version>cen-383-rc3</version>
 
     </parent>
 
@@ -17,7 +17,7 @@
 
     <artifactId>bpd-ms-notification-manager-api</artifactId>
 
-    <version>cen-383-rc2</version>
+    <version>cen-383-rc3</version>
 
     <packaging>pom</packaging>
 
