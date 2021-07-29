@@ -11,38 +11,42 @@ import org.junit.*;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.integration.config.EnableIntegration;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.support.TestPropertySourceUtils;
 import org.springframework.util.StreamUtils;
 
+import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-@ContextConfiguration(classes = {
-        WinnersSftpChannelConfig.class,
-        WinnersSftpChannelConfig.WinnersSftpGateway.class,
-        WinnersSftpConnector.class
-})
+@ContextConfiguration(initializers = WinnersSftpConnectorTest.RandomPortInitializer.class,
+        classes = {
+                WinnersSftpChannelConfig.class,
+                WinnersSftpChannelConfig.WinnersSftpGateway.class,
+                WinnersSftpConnector.class
+        })
 @EnableIntegration
 public class WinnersSftpConnectorTest {
 
@@ -64,7 +68,7 @@ public class WinnersSftpConnectorTest {
         );
         server.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(
                 new File(Files.createTempDirectory("SFTP_TEMP_KEY").toFile()
-                        .getAbsolutePath()+"/hostkey.ser").toPath()));
+                        .getAbsolutePath() + "/hostkey.ser").toPath()));
         server.setSubsystemFactories(Collections.singletonList(
                 new SftpSubsystemFactory()));
         server.setFileSystemFactory(new VirtualFileSystemFactory(folderPath));
@@ -84,8 +88,7 @@ public class WinnersSftpConnectorTest {
             RSAPublicKeySpec spec = new RSAPublicKeySpec(modulus, publicExponent);
             return KeyFactory.getInstance("RSA").generatePublic(spec);
 
-        }
-        else {
+        } else {
             throw new IllegalArgumentException("Only supports RSA");
         }
     }
@@ -126,18 +129,21 @@ public class WinnersSftpConnectorTest {
         }
     }
 
-    static String readFile(String path, Charset encoding)
-            throws IOException
-    {
-        byte[] encoded = Files.readAllBytes(Paths.get(path));
-        return new String(encoded, encoding);
-    }
-    static {
-        try {
-            String privateKey = readFile("src/test/resources/test_sftp/test", StandardCharsets.US_ASCII);
-            System.setProperty("NOTIFICATION_SFTP_PRIVATE_KEY", privateKey);
-        } catch (IOException e) {
-            e.printStackTrace();
+
+    public static class RandomPortInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+        @SneakyThrows
+        @Override
+        public void initialize(ConfigurableApplicationContext applicationContext) {
+            InputStream inputStream = WinnersSftpConnectorTest.class.getClassLoader().getResourceAsStream("test_sftp/test");
+            String privateKey = new BufferedReader(
+                    new InputStreamReader(Objects.requireNonNull(inputStream), StandardCharsets.UTF_8))
+                    .lines()
+                    .collect(Collectors.joining("\n"));
+            TestPropertySourceUtils
+                    .addInlinedPropertiesToEnvironment(applicationContext,
+                            String.format("NOTIFICATION_SFTP_PRIVATE_KEY=%s",
+                                    privateKey.replaceAll("\n", "\\\\n"))
+                    );
         }
     }
 

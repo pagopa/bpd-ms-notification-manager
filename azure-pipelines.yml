@@ -8,7 +8,7 @@ trigger:
       - master
       - develop
       - release/*
-      - features/*
+      - feature/*
       - hotfix/*
   paths:
     include:
@@ -38,9 +38,9 @@ variables:
   # Image Repository Name
   imageRepository: 'bpdmsnotificationmanager'
 
-  isToDeploy: $[and(ne(variables['Build.Reason'], 'PullRequest'), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix')))]
+  isToDeploy: $[and(ne(variables['Build.Reason'], 'PullRequest'), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release')))]
   isSIT: $[startsWith(variables['Build.SourceBranch'], 'refs/heads/release/st')]
-  isUAT: $[or(startsWith(variables['Build.SourceBranch'], 'refs/heads/release/uat'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix'))]
+  isUAT: $[startsWith(variables['Build.SourceBranch'], 'refs/heads/release/uat')]
   isPROD: $[eq(variables['Build.SourceBranch'], 'refs/heads/master')]
 
   ${{ if startsWith(variables['Build.SourceBranch'], 'refs/heads/release/st') }}:
@@ -48,7 +48,7 @@ variables:
     containerRegistry: 'cstarregistry.azurecr.io'
     deployment: deployment-sit
     imagePullSecret: 'cstarregistry-auth'
-  ${{ if or(startsWith(variables['Build.SourceBranch'], 'refs/heads/release/uat'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix')) }}:
+  ${{ if startsWith(variables['Build.SourceBranch'], 'refs/heads/release/uat') }}:
     dockerRegistryServiceConnection: 'cstaruatregistry-connection'
     containerRegistry: 'cstaruatregistry.azurecr.io'
     deployment: deployment-uat
@@ -58,7 +58,7 @@ variables:
     containerRegistry: 'cstarprodregistry.azurecr.io'
     deployment: deployment-prod
     imagePullSecret: 'cstarprodregistry-auth'
-  ${{ if and(not(startsWith(variables['Build.SourceBranch'], 'refs/heads/release')), ne(variables['Build.SourceBranch'], 'refs/heads/master'), not(startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix'))) }}:
+  ${{ if and(not(startsWith(variables['Build.SourceBranch'], 'refs/heads/release')), ne(variables['Build.SourceBranch'], 'refs/heads/master')) }}:
     dockerRegistryServiceConnection: 'cstarregistry-connection'
 
 stages:
@@ -77,7 +77,7 @@ stages:
             name: settingsxml
             inputs:
               secureFile: 'settings.xml'
-              retryCount: '2'  
+              retryCount: '2'
           - task: Maven@3
             inputs:
               mavenPomFile: 'pom.xml'
@@ -105,7 +105,7 @@ stages:
             name: settingsxml
             inputs:
               secureFile: 'settings.xml'
-              retryCount: '2'  
+              retryCount: '2'
           - task: Bash@3
             displayName: Get POM version
             name: getpomversion
@@ -115,7 +115,7 @@ stages:
               script: |
                 version=$(cat pom.xml | grep '^.*<version>' | sed -n 2p | awk -F'[><]' '{print $3}')
                 echo "##vso[task.setvariable variable=outputpomversion;isOutput=true]$version"
-              failOnStderr: true  
+              failOnStderr: true
 
 
   - stage: SIT
@@ -135,7 +135,7 @@ stages:
             name: settingsxml
             inputs:
               secureFile: 'settings.xml'
-              retryCount: '2'  
+              retryCount: '2'
           - task: Maven@3
             inputs:
               mavenPomFile: 'pom.xml'
@@ -167,7 +167,7 @@ stages:
             inputs:
               targetPath: '$(Build.Repository.LocalPath)/manifests'
               artifact: 'manifests'
-              publishLocation: 'pipeline' 
+              publishLocation: 'pipeline'
 
       - deployment: Deploy
         displayName: Deploy
@@ -185,7 +185,7 @@ stages:
                   inputs:
                     buildType: 'current'
                     artifactName: 'manifests'
-                    targetPath: '$(Pipeline.Workspace)/manifests'              
+                    targetPath: '$(Pipeline.Workspace)/manifests'
                 - task: KubernetesManifest@0
                   displayName: Deploy to Kubernetes cluster
                   inputs:
@@ -217,7 +217,7 @@ stages:
             name: settingsxml
             inputs:
               secureFile: 'settings.xml'
-              retryCount: '2'  
+              retryCount: '2'
           - task: Maven@3
             inputs:
               mavenPomFile: 'pom.xml'
@@ -229,7 +229,7 @@ stages:
               mavenOptions: '-Xmx3072m'
               mavenAuthenticateFeed: false
               effectivePomSkip: true
-              sonarQubeRunAnalysis: false                
+              sonarQubeRunAnalysis: false
           - task: Docker@2
             displayName: Build and push an image to container registry
             condition: succeeded()
@@ -249,7 +249,7 @@ stages:
             inputs:
               targetPath: '$(Build.Repository.LocalPath)/manifests'
               artifact: 'manifests'
-              publishLocation: 'pipeline' 
+              publishLocation: 'pipeline'
 
 
       - deployment: Deploy
@@ -278,9 +278,9 @@ stages:
                       $(Pipeline.Workspace)/manifests/$(deployment).yml
                       $(Pipeline.Workspace)/manifests/service.yml
                     containers: '$(containerRegistry)/$(imageRepository):$(pomversion)'
-                    imagePullSecrets: '$(imagePullSecret)'                     
+                    imagePullSecrets: '$(imagePullSecret)'
 
- 
+
   - stage: PROD
     displayName: PROD
     dependsOn: POM
@@ -298,12 +298,12 @@ stages:
             name: settingsxml
             inputs:
               secureFile: 'settings.xml'
-              retryCount: '2'  
+              retryCount: '2'
           - task: Maven@3
             inputs:
               mavenPomFile: 'pom.xml'
               goals: 'deploy'
-              options: '-B -s $(settingsxml.secureFilePath) -DskipTests=true'
+              options: '-B -s $(settingsxml.secureFilePath) -DskipTests=false'
               javaHomeOption: 'JDKVersion'
               jdkVersionOption: '1.8'
               mavenVersionOption: 'Default'
