@@ -297,6 +297,9 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
     }
 
     private NotificationResource sendNotifyIO(String fiscalCode, String notifySubject, String notifyMarkdown) {
+        if (log.isDebugEnabled()) {
+            log.debug("fiscalCode = " + fiscalCode + ", notifySubject = " + notifySubject + ", notifyMarkdown = " + notifyMarkdown);
+        }
         NotificationDTO dto = notificationDtoMapper.NotificationDtoMapper(
                 fiscalCode, timeToLive, notifySubject, notifyMarkdown);
         return notificationRestConnector.notify(dto);
@@ -304,7 +307,6 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
 
     @Override
     public void notifyEndPeriodOrEndGracePeriod(AwardPeriod awardPeriod, Boolean isEndPeriod) throws IOException {
-
         Long limit = notifyEndPeriodLimit;
 
         String notifySubject = subjectEndPeriod;
@@ -352,7 +354,7 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
                     notifySubject = notifySubject.replace("{{award_period}}", awPeriods.get(awardPeriod.getAwardPeriodId()));
                     notifyMarkdown = notifyMarkdown
                             .replace("{{phase}}", phases.get(awardPeriod.getAwardPeriodId()))
-                            .replace("{{maxTransaction}}", awardPeriod.getMaxTransactionCashback().toString())
+                            .replace("{{minTransaction}}", awardPeriod.getMinTransactionNumber().toString())
                             .replace("{{amount}}", citRanking.getTotalCashback() != null ? citRanking.getTotalCashback().setScale(2, ROUND_HALF_DOWN).toString().replace(".", ",") : MARKDOWN_NA)
                             .replace("\\n", System.lineSeparator());
 
