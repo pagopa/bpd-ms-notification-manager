@@ -48,6 +48,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
     private final Integer MAX_CITIZEN_UPDATE_RANKING_MILESTONE;
     private final int THREAD_POOL;
     private final int BONIFICA_RECESSO_SEARCH_DAYS;
+    private final Period notifyEndGracePeriodLimit;
 
     @Autowired
     NotificationServiceImpl(
@@ -64,7 +65,8 @@ class NotificationServiceImpl extends BaseService implements NotificationService
             @Value("${core.NotificationService.updateRanking.limitUpdateRankingMilestone}") int LIMIT_UPDATE_RANKING_MILESTONE,
             @Value("${core.NotificationService.updateRanking.maxCitizenUpdateRankingMilestone}") Integer MAX_CITIZEN_UPDATE_RANKING_MILESTONE,
             @Value("${core.NotificationService.updateRanking.threadPoolRankingMilestone}") int THREAD_POOL,
-            @Value("${core.NotificationService.update.bonfifica.recesso.citizen.search.days}") int BONIFICA_RECESSO_SEARCH_DAYS) {
+            @Value("${core.NotificationService.update.bonfifica.recesso.citizen.search.days}") int BONIFICA_RECESSO_SEARCH_DAYS,
+            @Value("${core.NotificationService.notify.end-grace-period.limit}") Period notifyEndGracePeriodLimit) {
         this.citizenDAO = citizenDAO;
         this.notificationDtoMapper = notificationDtoMapper;
         this.notificationRestConnector = notificationRestConnector;
@@ -79,6 +81,9 @@ class NotificationServiceImpl extends BaseService implements NotificationService
         this.MAX_CITIZEN_UPDATE_RANKING_MILESTONE = MAX_CITIZEN_UPDATE_RANKING_MILESTONE;
         this.THREAD_POOL = THREAD_POOL;
         this.BONIFICA_RECESSO_SEARCH_DAYS = BONIFICA_RECESSO_SEARCH_DAYS;
+        this.notifyEndGracePeriodLimit = notifyEndGracePeriodLimit == null
+                ? Period.ofMonths(1)
+                : notifyEndGracePeriodLimit;
     }
 
 
@@ -197,7 +202,7 @@ class NotificationServiceImpl extends BaseService implements NotificationService
 
     @Override
     @Scheduled(cron = "${core.NotificationService.notify.end.period.scheduled}")
-    public void notifyEndPeriodOrEndGracePeriod() throws IOException {
+    public void notifyEndPeriodOrEndGracePeriod() {
         if (logger.isInfoEnabled()) {
             logger.info("NotificationManagerServiceImpl.notifyEndPeriodOrEndGracePeriod start");
         }
@@ -214,8 +219,8 @@ class NotificationServiceImpl extends BaseService implements NotificationService
                         && yesterday.isBefore(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())))))
                 || awardPeriods.stream().anyMatch(period ->
                 yesterday.isEqual(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())))
-                        || (yesterday.isAfter(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue()))))
-                        && yesterday.isBefore(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())).plus(Period.ofDays(10))))
+                        || (yesterday.isAfter(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())))
+                        && yesterday.isBefore(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())).plus(notifyEndGracePeriodLimit))))
         ) {
 
             if (awardPeriods.stream().anyMatch(period ->
@@ -232,8 +237,8 @@ class NotificationServiceImpl extends BaseService implements NotificationService
             } else {
                 awardPeriod = awardPeriods.stream().filter(period ->
                         yesterday.isEqual(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())))
-                                || (yesterday.isAfter(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue()))))
-                                && yesterday.isBefore(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())).plus(Period.ofDays(10)))
+                                || (yesterday.isAfter(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())))
+                                && yesterday.isBefore(period.getEndDate().plus(Period.ofDays(period.getGracePeriod().intValue())).plus(notifyEndGracePeriodLimit)))
                 ).findAny().get();
             }
 

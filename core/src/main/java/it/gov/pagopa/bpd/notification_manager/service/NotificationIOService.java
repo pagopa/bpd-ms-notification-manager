@@ -6,7 +6,7 @@ import java.io.IOException;
 
 public interface NotificationIOService {
 
-    public int notifyWinnersPayments() throws IOException;
+    int notifyWinnersPayments() throws IOException;
 
-    public void notifyEndPeriodOrEndGracePeriod(AwardPeriod awardPeriod, Boolean isEndPeriod) throws IOException;
+    void notifyEndPeriodOrEndGracePeriod(AwardPeriod awardPeriod, Boolean isEndPeriod);
 }

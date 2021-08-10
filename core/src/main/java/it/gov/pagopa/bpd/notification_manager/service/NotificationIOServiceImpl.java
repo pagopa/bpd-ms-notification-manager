@@ -306,16 +306,18 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
     }
 
     @Override
-    public void notifyEndPeriodOrEndGracePeriod(AwardPeriod awardPeriod, Boolean isEndPeriod) throws IOException {
-        Long limit = notifyEndPeriodLimit;
+    public void notifyEndPeriodOrEndGracePeriod(AwardPeriod awardPeriod, Boolean isEndPeriod) {
+        if (log.isDebugEnabled()) {
+            log.debug("awardPeriod = {}, isEndPeriod = {}", awardPeriod, isEndPeriod);
+        }
 
         String notifySubject = subjectEndPeriod;
         String notifyMarkdown = markdownEndPeriod;
 
-        String step = null;
+        String step;
         int errorNot = 0;
 
-        List<CitizenRanking> citizenToNotify = null;
+        List<CitizenRanking> citizenToNotify;
 
         do {
             if (isEndPeriod) {
@@ -329,7 +331,6 @@ public class NotificationIOServiceImpl extends BaseService implements Notificati
                             awardPeriod.getAwardPeriodId(), step, notifyEndPeriodLimit, awardPeriod.getEndDate());
 
             for (CitizenRanking citRanking : citizenToNotify) {
-                Boolean updateCit = Boolean.TRUE;
 
                 if (!isEndPeriod) {
                     if (citRanking.getRanking() != null

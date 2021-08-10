@@ -29,10 +29,10 @@ public interface CitizenRankingDAO extends CrudJpaDAO<CitizenRanking, CitizenRan
             "FROM bpd_citizen bc " +
             "CROSS JOIN bpd_ranking_ext bre " +
             "LEFT OUTER JOIN bpd_citizen_ranking bcr ON bc.fiscal_code_s = bcr.fiscal_code_c " +
-            "AND bcr.award_period_id_n = bre.award_period_id_n " +
+            "AND bcr.award_period_id_n = :awardPeriodId " +
             "WHERE bc.enabled_b IS TRUE " +
             "AND (bc.notification_step_s IS null OR bc.notification_step_s NOT LIKE '%' || :step || '%') " +
-            "AND bcr.award_period_id_n = :awardPeriodId " +
+            "AND bre.award_period_id_n = :awardPeriodId " +
             "AND bc.timestamp_tc_t < :endPeriodDate " +
             "ORDER BY bcr.transaction_n DESC, bcr.fiscal_code_c " +
             "LIMIT :limit")
