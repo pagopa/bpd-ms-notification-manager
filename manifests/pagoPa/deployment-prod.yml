@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: bpdmsnotificationmanager
 spec:
-  replicas: 1
+  replicas: 0
   selector:
     matchLabels:
       app: bpdmsnotificationmanager
@@ -34,11 +34,11 @@ spec:
                 name: jvm
           resources:
             limits:
-              cpu: 800m
-              memory: 6Gi
+              cpu: 500m
+              memory: 1Gi
             requests:
-              cpu: 50m
-              memory: 256Mi
+              cpu: 200m
+              memory: 600Mi
           livenessProbe:
             httpGet:
               path: /actuator/health
