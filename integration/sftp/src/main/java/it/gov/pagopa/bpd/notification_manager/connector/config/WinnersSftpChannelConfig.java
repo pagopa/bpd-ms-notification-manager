@@ -48,7 +48,7 @@ public class WinnersSftpChannelConfig {
         factory.setHost(host);
         factory.setPort(port);
         factory.setUser(user);
-        if (privateKey != null) {
+        if (privateKey != null && !privateKey.trim().isEmpty()) {
             Resource privateKeyResource = new ByteArrayResource((
                     privateKey.replace("\\n", System.lineSeparator()))
                     .getBytes());
